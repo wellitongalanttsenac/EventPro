@@ -1,8 +1,10 @@
 package com.example.eventpro.controller;
 
+import com.example.eventpro.entities.Palestrante;
 import com.example.eventpro.repository.PalestranteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,7 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/palestrante")
-public class Palestrante {
+public class PalestranteController {
 
     @Autowired
     private PalestranteRepository palestranteRepository;
