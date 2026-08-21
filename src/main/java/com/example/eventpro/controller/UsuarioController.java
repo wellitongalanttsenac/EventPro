@@ -1,11 +1,12 @@
 package com.example.eventpro.controller;
 
 import com.example.eventpro.entities.Usuario;
+import com.example.eventpro.repository.UsuarioRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -13,10 +14,22 @@ import java.util.List;
 @RequestMapping("/usuarios")
 public class UsuarioController {
 
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
     @GetMapping
     public ResponseEntity<?> listarTodos(){
-        List<Usuario> usuarios = List.of(new Usuario(1L, "Samuel", "123456789123", "1234", "samuel@matos.com"));
-        return ResponseEntity.ok(usuarios);
+
+        return ResponseEntity.ok(usuarioRepository.findAll());
     }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResponseEntity<Usuario> criar(@RequestBody Usuario usuario){
+        var usuarioBd = usuarioRepository.save(usuario);
+        return ResponseEntity.ok(usuarioBd);
+    }
+
+
 
 }
