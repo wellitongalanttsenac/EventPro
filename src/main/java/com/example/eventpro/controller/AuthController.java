@@ -21,9 +21,12 @@ public class AuthController {
     @PostMapping
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest){
 
-        if(loginRequest.email().equals("string")&& loginRequest.senha().equals("string")){
+        if(loginRequest.email().equals("string") && loginRequest.senha().equals("string")){
             var token = tokenService.geraToken(loginRequest.email());
+
+            return ResponseEntity.ok(token);
         }
+
         return ResponseEntity.status(HttpURLConnection.HTTP_UNAUTHORIZED).build();
     }
 }
