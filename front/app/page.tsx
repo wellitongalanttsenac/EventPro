@@ -1,4 +1,7 @@
 "use client";
+import Link from "next/link";
+import { useRouter } from "next/router";
+
 import { useState } from "react";
 
 function randomBlock(length: number) {
@@ -15,8 +18,19 @@ function newCredentialCode() {
 }
 
 export default function Home() {
+
+  const router = useRouter();
+
   const [code, setCode] = useState("EVP-7F3A-91K2");
   const [animating, setAnimating] = useState(false);
+
+  
+
+  const handlerLogin = async () => {
+
+    router.push("/login");
+
+  }
 
   const handleGenerateCode = () => {
     setAnimating(false);
@@ -27,7 +41,7 @@ export default function Home() {
   };
 
   return (
-    <div className="bg-[#FAFAF8] text-[#17151A] font-sans antialiased selection:bg-[#F7D9DD] selection:text-[#D7263D]">
+    <div className="min-h-screen bg-[#150606] text-[#F5EDEC] font-sans antialiased selection:bg-[#FF3B3B] selection:text-[#150606]">
       <style jsx global>{`
         @media (prefers-reduced-motion: reduce) {
           * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
@@ -40,39 +54,40 @@ export default function Home() {
           to { opacity: 1; transform: translateY(0); }
         }
         .focus-ring:focus-visible {
-          outline: 2px solid #D7263D;
+          outline: 2px solid #FF3B3B;
           outline-offset: 3px;
         }
         html { scroll-behavior: smooth; }
       `}</style>
 
       {/* ===================== HEADER ===================== */}
-      <header className="sticky top-0 z-50 bg-[#FAFAF8]/90 backdrop-blur border-b border-[#E7E4E2]">
-        <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-16">
+      <header className="fixed top-0 inset-x-0 z-50 border-b border-white/10 bg-[#150606]/80 backdrop-blur">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <a href="#top" className="flex items-center gap-2 focus-ring rounded">
-            <span className="w-2.5 h-2.5 bg-[#D7263D] rounded-sm"></span>
-            <span className="font-bold text-lg tracking-tight font-serif">EventPro</span>
+            <span className="text-[#FF3B3B] text-xl leading-none">✱</span>
+            <span className="font-semibold text-lg tracking-tight">EventPro</span>
           </a>
 
-          <nav aria-label="Navegação principal" className="hidden md:flex items-center gap-8 text-sm text-[#6B6870]">
-            <a href="#como-funciona" className="hover:text-[#17151A] transition-colors focus-ring rounded">Como funciona</a>
-            <a href="#diferencial" className="hover:text-[#17151A] transition-colors focus-ring rounded">Credencial única</a>
-            <a href="#historia" className="hover:text-[#17151A] transition-colors focus-ring rounded">Nossa história</a>
+          <nav aria-label="Navegação principal" className="hidden md:flex items-center gap-8 text-sm text-white/60">
+            <a href="#top" className="hover:text-white transition-colors focus-ring rounded">Início</a>
+            <a href="#recursos" className="hover:text-white transition-colors focus-ring rounded">Recursos</a>
+            <a href="#footer" className="hover:text-white transition-colors focus-ring rounded">Contato</a>
           </nav>
 
           <div className="flex items-center gap-3">
             <button
+              onClick={handlerLogin}
               type="button"
               aria-label="Entrar na sua conta EventPro"
-              className="hidden sm:inline-flex px-4 py-2 text-sm font-medium text-[#17151A] border border-[#E7E4E2] rounded-md hover:border-[#17151A] transition-colors focus-ring"
+              className="hidden sm:inline-flex px-4 py-2 text-sm font-medium text-white/80 hover:text-white transition-colors focus-ring rounded"
             >
               Entrar
             </button>
             <a
-              href="#cta"
-              className="inline-flex px-4 py-2 text-sm font-medium text-white bg-[#D7263D] rounded-md hover:bg-[#B01E32] transition-colors focus-ring"
+              href="#top"
+              className="inline-flex px-4 py-2 text-sm font-medium bg-[#FF3B3B] text-[#150606] rounded-full hover:bg-[#ff5c5c] transition-colors focus-ring"
             >
-              Criar conta / Registrar
+              Registrar
             </a>
           </div>
         </div>
@@ -80,274 +95,122 @@ export default function Home() {
 
       <main id="top">
         {/* ===================== HERO ===================== */}
-        <section className="max-w-6xl mx-auto px-6 pt-16 pb-20 md:pt-24 md:pb-28">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <p className="text-sm text-[#D7263D] font-medium mb-4">Feito para quem organiza workshops e palestras</p>
-              <h1 className="text-4xl md:text-5xl font-semibold leading-tight tracking-tight text-[#17151A] font-serif">
-                Cada evento sob seu controle. Cada inscrição, com credencial própria.
-              </h1>
-              <p className="mt-6 text-lg text-[#6B6870] leading-relaxed max-w-lg">
-                O EventPro organiza a gestão de palestrantes e inscrições dos eventos que você cria — e gera, automaticamente, uma credencial única para cada inscrição confirmada.
-              </p>
+        <section className="relative overflow-hidden pt-40 pb-24 md:pt-48 md:pb-32">
+          {/* glow de fundo */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-40 right-0 w-[600px] h-[600px] rounded-full bg-[#FF3B3B]/20 blur-[120px]"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full bg-[#FF3B3B]/10 blur-[120px]"
+          />
 
-              <div className="mt-8 flex flex-col sm:flex-row gap-3">
-                <a
-                  href="#cta"
-                  className="inline-flex justify-center px-6 py-3 bg-[#D7263D] text-white font-medium rounded-md hover:bg-[#B01E32] transition-colors focus-ring"
-                >
-                  Criar conta / Registrar
-                </a>
-                <a
-                  href="#como-funciona"
-                  className="inline-flex justify-center px-6 py-3 border border-[#E7E4E2] text-[#17151A] font-medium rounded-md hover:border-[#17151A] transition-colors focus-ring"
-                >
-                  Ver como funciona
-                </a>
+          <div className="relative max-w-7xl mx-auto px-6">
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
+              {/* Coluna de texto */}
+              <div>
+                <p className="flex items-center gap-2 text-xs tracking-[0.2em] text-white/50 uppercase mb-6">
+                  <span className="text-[#FF3B3B]">✱</span>
+                  Gestão de workshops e palestras
+                </p>
+
+                <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight">
+                  Cada evento.
+                  <br />
+                  Cada credencial.
+                  <br />
+                  <span className="text-[#FF3B3B]">Sob seu controle.</span>
+                </h1>
+
+                <p className="mt-8 text-lg text-white/60 leading-relaxed max-w-md">
+                  O EventPro organiza inscrições e palestrantes dos eventos que você cria — e gera
+                  automaticamente uma credencial única para cada inscrição confirmada.
+                </p>
+
+                <div className="mt-10 flex flex-wrap items-center gap-4">
+                  <a
+                    href="#top"
+                    className="inline-flex items-center gap-2 px-7 py-3.5 bg-[#FF3B3B] text-[#150606] font-semibold rounded-full hover:bg-[#ff5c5c] transition-colors focus-ring"
+                  >
+                    Criar conta grátis
+                  </a>
+                  <button
+                    onClick={handlerLogin}
+                    type="button"
+                    className="inline-flex items-center px-7 py-3.5 border border-white/20 text-white font-medium rounded-full hover:border-white/50 transition-colors focus-ring"
+                  >
+                    Entrar
+                  </button>
+                </div>
+
+                <div className="mt-14 flex flex-wrap gap-2">
+                  {["WORKSHOPS", "PALESTRAS", "CREDENCIAIS", "INSCRIÇÕES"].map((tag) => (
+                    <span
+                      key={tag}
+                      className="text-[11px] tracking-wider text-white/50 border border-white/10 rounded-full px-3 py-1"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
               </div>
 
-              <dl className="mt-12 grid grid-cols-3 gap-6 max-w-md">
-                <div>
-                  <dt className="text-2xl font-bold text-[#17151A] font-serif">100%</dt>
-                  <dd className="text-sm text-[#6B6870] mt-1">isolamento por organizador</dd>
-                </div>
-                <div>
-                  <dt className="text-2xl font-bold text-[#17151A] font-serif">1</dt>
-                  <dd className="text-sm text-[#6B6870] mt-1">credencial por inscrição</dd>
-                </div>
-                <div>
-                  <dt className="text-2xl font-bold text-[#17151A] font-serif">0</dt>
-                  <dd className="text-sm text-[#6B6870] mt-1">planilhas paralelas</dd>
-                </div>
-              </dl>
-            </div>
-
-            {/* Mockup de credencial */}
-            <div className="relative">
-              <div className="bg-[#FFFFFF] border border-[#E7E4E2] rounded-2xl shadow-[0_8px_30px_-12px_rgba(23,21,26,0.15)] p-6 sm:p-8 max-w-sm mx-auto">
-                <div className="flex items-center justify-between mb-6">
-                  <span className="text-xs font-medium text-[#6B6870]">Credencial de inscrição</span>
-                  <span className="text-xs font-medium text-[#D7263D] bg-[#F7D9DD] px-2 py-1 rounded">Confirmada</span>
-                </div>
-
-                <img
-                  src="https://placehold.co/64x64/17151A/FAFAF8?text=WS"
-                  alt="Ícone do workshop Design de Interfaces 2026"
-                  className="w-14 h-14 rounded-lg mb-4"
-                />
-
-                <h3 className="font-semibold text-lg text-[#17151A] font-serif">Design de Interfaces — 2026</h3>
-                <p className="text-sm text-[#6B6870] mt-1">Ana Beatriz Ferreira</p>
-
-                <div className="mt-6 pt-6 border-t border-[#E7E4E2]">
-                  <p className="text-xs text-[#6B6870] mb-2">Código da credencial</p>
-                  <p className="credential-code font-mono text-lg text-[#17151A] tracking-wide">{code}</p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleGenerateCode}
-                  className="mt-6 w-full text-sm font-medium text-[#D7263D] border border-[#D7263D]/30 rounded-md py-2 hover:bg-[#F7D9DD] transition-colors focus-ring"
-                  aria-live="polite"
-                >
-                  Gerar novo exemplo
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ===================== COMO FUNCIONA ===================== --> */}
-        <section id="como-funciona" className="bg-[#17151A] text-[#FAFAF8] py-20 md:py-28">
-          <div className="max-w-6xl mx-auto px-6">
-            <div className="max-w-xl mb-14">
-              <h2 className="text-3xl md:text-4xl font-semibold tracking-tight font-serif">Do primeiro convite à credencial emitida</h2>
-              <p className="mt-4 text-white/60 leading-relaxed">Quatro etapas, o suficiente para tirar um evento do papel.</p>
-            </div>
-
-            <ol className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              <li>
-                <span className="font-mono text-[#D7263D] text-sm">01</span>
-                <h3 className="font-semibold text-lg mt-3 font-serif">Crie o evento</h3>
-                <p className="text-white/60 text-sm mt-2 leading-relaxed">Defina nome, data, formato e vagas. O evento passa a existir só no seu painel.</p>
-              </li>
-              <li>
-                <span className="font-mono text-[#D7263D] text-sm">02</span>
-                <h3 className="font-semibold text-lg mt-3 font-serif">Adicione palestrantes</h3>
-                <p className="text-white/60 text-sm mt-2 leading-relaxed">Cadastre quem vai apresentar. Cada palestrante fica vinculado apenas a esse evento.</p>
-              </li>
-              <li>
-                <span className="font-mono text-[#D7263D] text-sm">03</span>
-                <h3 className="font-semibold text-lg mt-3 font-serif">Abra as inscrições</h3>
-                <p className="text-white/60 text-sm mt-2 leading-relaxed">Compartilhe o link. As inscrições chegam direto no seu painel de organizador.</p>
-              </li>
-              <li>
-                <span className="font-mono text-[#D7263D] text-sm">04</span>
-                <h3 className="font-semibold text-lg mt-3 font-serif">Credencial emitida</h3>
-                <p className="text-white/60 text-sm mt-2 leading-relaxed">Cada inscrição confirmada recebe um código único, pronto para check-in.</p>
-              </li>
-            </ol>
-          </div>
-        </section>
-
-        {/* ===================== REGRA DE NEGÓCIO: ISOLAMENTO ===================== */}
-        <section className="max-w-6xl mx-auto px-6 py-20 md:py-28">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="order-2 md:order-1">
-              <div className="bg-[#FFFFFF] border border-[#E7E4E2] rounded-2xl p-6 sm:p-8 shadow-[0_8px_30px_-12px_rgba(23,21,26,0.1)]">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-[#F7D9DD]/60">
-                    <span className="w-8 h-8 rounded-full bg-[#D7263D] text-white flex items-center justify-center text-xs font-mono">VC</span>
-                    <div>
-                      <p className="text-sm font-medium text-[#17151A]">Design de Interfaces — 2026</p>
-                      <p className="text-xs text-[#6B6870]">Seu evento · 84 inscrições</p>
-                    </div>
+              {/* Coluna visual: cartão de credencial + stats flutuantes */}
+              <div className="relative">
+                <div className="relative bg-[#1D0B0B] border border-white/10 rounded-3xl p-8 shadow-[0_30px_80px_-20px_rgba(255,59,59,0.25)]">
+                  <div className="flex items-center justify-between mb-8">
+                    <span className="text-xs text-white/50">Credencial de inscrição</span>
+                    <span className="text-xs font-medium text-[#FF3B3B] bg-[#FF3B3B]/10 px-3 py-1 rounded-full">
+                      Confirmada
+                    </span>
                   </div>
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-[#F7D9DD]/60">
-                    <span className="w-8 h-8 rounded-full bg-[#D7263D] text-white flex items-center justify-center text-xs font-mono">VC</span>
-                    <div>
-                      <p className="text-sm font-medium text-[#17151A]">Fundamentos de Dados — Turma B</p>
-                      <p className="text-xs text-[#6B6870]">Seu evento · 41 inscrições</p>
-                    </div>
+
+                  <h3 className="font-semibold text-xl">Design de Interfaces — 2026</h3>
+                  <p className="text-sm text-white/50 mt-1">Ana Beatriz Ferreira</p>
+
+                  <div className="mt-8 pt-8 border-t border-white/10">
+                    <p className="text-xs text-white/50 mb-2">Código da credencial</p>
+                    <p className="credential-code font-mono text-2xl tracking-wide text-white">{code}</p>
                   </div>
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-[#E7E4E2]/40 opacity-50">
-                    <span className="w-8 h-8 rounded-full bg-[#6B6870] text-white flex items-center justify-center text-xs font-mono">—</span>
-                    <div>
-                      <p className="text-sm font-medium text-[#17151A]">Eventos de outros organizadores</p>
-                      <p className="text-xs text-[#6B6870]">Fora do seu painel</p>
-                    </div>
-                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleGenerateCode}
+                    aria-live="polite"
+                    className="mt-8 w-full text-sm font-medium text-[#FF3B3B] border border-[#FF3B3B]/30 rounded-full py-3 hover:bg-[#FF3B3B]/10 transition-colors focus-ring"
+                  >
+                    Gerar novo exemplo
+                  </button>
+                </div>
+
+                {/* stat card flutuante */}
+                <div className="hidden sm:block absolute -bottom-8 -left-8 bg-[#F5EDEC] text-[#150606] rounded-2xl p-5 w-44 shadow-2xl">
+                  <p className="text-xs text-[#150606]/60">Isolamento entre organizadores</p>
+                  <p className="text-3xl font-bold mt-1">100%</p>
                 </div>
               </div>
-            </div>
-
-            <div className="order-1 md:order-2">
-              <p className="text-sm text-[#D7263D] font-medium mb-4">Regra central da plataforma</p>
-              <h2 className="text-3xl md:text-4xl font-semibold tracking-tight leading-tight font-serif">
-                Você só gerencia o que você mesmo criou
-              </h2>
-              <p className="mt-6 text-[#6B6870] leading-relaxed">
-                No EventPro, cada organizador enxerga e administra apenas as inscrições e os palestrantes dos eventos que ele próprio cadastrou. Não existe visão cruzada entre organizadores — o painel de cada um reflete exclusivamente o que é seu.
-              </p>
-              <p className="mt-4 text-[#6B6870] leading-relaxed">
-                Isso mantém dados de participantes protegidos, evita conflitos de agenda entre equipes diferentes e simplifica a prestação de contas de cada evento.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* ===================== DIFERENCIAL: CREDENCIAL ÚNICA ===================== */}
-        <section id="diferencial" className="bg-[#F7D9DD]/40 py-20 md:py-28">
-          <div className="max-w-6xl mx-auto px-6">
-            <div className="max-w-2xl">
-              <p className="text-sm text-[#D7263D] font-medium mb-4">O diferencial do EventPro</p>
-              <h2 className="text-3xl md:text-4xl font-semibold tracking-tight leading-tight font-serif">
-                Toda inscrição confirmada gera uma credencial exclusiva
-              </h2>
-              <p className="mt-6 text-[#6B6870] leading-relaxed">
-                No momento em que uma inscrição é confirmada, o EventPro gera automaticamente um código único — um identificador que não se repete entre eventos nem entre participantes. Esse código é o que valida a entrada de cada pessoa no dia do evento, sem depender de listas impressas ou conferência manual.
-              </p>
-            </div>
-
-            <div className="mt-14 grid sm:grid-cols-3 gap-6">
-              <div className="bg-[#FFFFFF] border border-[#E7E4E2] rounded-xl p-6">
-                <p className="font-mono text-[#D7263D] text-sm mb-3">Gerado no instante da confirmação</p>
-                <p className="text-sm text-[#6B6870] leading-relaxed">Sem filas de processamento — o código nasce junto com a inscrição confirmada.</p>
-              </div>
-              <div className="bg-[#FFFFFF] border border-[#E7E4E2] rounded-xl p-6">
-                <p className="font-mono text-[#D7263D] text-sm mb-3">Único por inscrição</p>
-                <p className="text-sm text-[#6B6870] leading-relaxed">Cada credencial pertence a uma única pessoa, em um único evento.</p>
-              </div>
-              <div className="bg-[#FFFFFF] border border-[#E7E4E2] rounded-xl p-6">
-                <p className="font-mono text-[#D7263D] text-sm mb-3">Pronto para check-in</p>
-                <p className="text-sm text-[#6B6870] leading-relaxed">Basta conferir o código na entrada — sem planilha, sem improviso.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ===================== NOSSA HISTÓRIA ===================== */}
-        <section id="historia" className="max-w-6xl mx-auto px-6 py-20 md:py-28">
-          <div className="grid md:grid-cols-3 gap-12">
-            <div>
-              <h2 className="text-3xl font-semibold tracking-tight font-serif">Nossa história</h2>
-            </div>
-            <div className="md:col-span-2 space-y-5 text-[#6B6870] leading-relaxed max-w-2xl">
-              <p>
-                O EventPro nasceu da rotina de quem organiza workshops usando planilhas e formulários desconectados — e acaba perdendo o controle de quem realmente confirmou presença.
-              </p>
-              <p>
-                Nossa missão é simples: devolver o controle ao organizador através de isolamento total de dados e automação inteligente, eliminando o caos administrativo de eventos.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* ===================== CTA FINAL ===================== */}
-        <section id="cta" className="bg-[#17151A] text-[#FAFAF8] py-20 md:py-28">
-          <div className="max-w-3xl mx-auto px-6 text-center">
-            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight font-serif">Organize seu próximo evento com o EventPro</h2>
-            <p className="mt-4 text-white/60 leading-relaxed max-w-xl mx-auto">
-              Crie o evento, convide os palestrantes e deixe a emissão de credenciais com a gente.
-            </p>
-            <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-              <button
-                type="button"
-                className="inline-flex justify-center px-6 py-3 bg-[#D7263D] text-white font-medium rounded-md hover:bg-[#B01E32] transition-colors focus-ring"
-              >
-                Criar conta gratuita / Registrar
-              </button>
-              <button
-                type="button"
-                className="inline-flex justify-center px-6 py-3 border border-white/20 text-[#FAFAF8] font-medium rounded-md hover:border-white/50 transition-colors focus-ring"
-              >
-                Falar com o time
-              </button>
             </div>
           </div>
         </section>
       </main>
 
       {/* ===================== FOOTER ===================== */}
-      <footer className="bg-[#FAFAF8] border-t border-[#E7E4E2]">
-        <div className="max-w-6xl mx-auto px-6 py-12">
-          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 bg-[#D7263D] rounded-sm"></span>
-                <span className="font-bold text-lg font-serif">EventPro</span>
-              </div>
-              <p className="text-sm text-[#6B6870] mt-3">Gestão de workshops e palestras, com credencial única por inscrição.</p>
-            </div>
-
-            <nav aria-label="Produto">
-              <h3 className="text-sm font-medium text-[#17151A] mb-3">Produto</h3>
-              <ul className="space-y-2 text-sm text-[#6B6870]">
-                <li><a href="#como-funciona" className="hover:text-[#17151A] transition-colors focus-ring rounded">Como funciona</a></li>
-                <li><a href="#diferencial" className="hover:text-[#17151A] transition-colors focus-ring rounded">Credencial única</a></li>
-              </ul>
-            </nav>
-
-            <nav aria-label="Empresa">
-              <h3 className="text-sm font-medium text-[#17151A] mb-3">Empresa</h3>
-              <ul className="space-y-2 text-sm text-[#6B6870]">
-                <li><a href="#historia" className="hover:text-[#17151A] transition-colors focus-ring rounded">Nossa história</a></li>
-                <li><a href="#" className="hover:text-[#17151A] transition-colors focus-ring rounded">Contato</a></li>
-              </ul>
-            </nav>
-
-            <nav aria-label="Legal">
-              <h3 className="text-sm font-medium text-[#17151A] mb-3">Legal</h3>
-              <ul className="space-y-2 text-sm text-[#6B6870]">
-                <li><a href="#" className="hover:text-[#17151A] transition-colors focus-ring rounded">Termos de uso</a></li>
-                <li><a href="#" className="hover:text-[#17151A] transition-colors focus-ring rounded">Privacidade</a></li>
-              </ul>
-            </nav>
+      <footer id="footer" className="border-t border-white/10">
+        <div className="max-w-7xl mx-auto px-6 py-14 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+          <div className="flex items-center gap-2">
+            <span className="text-[#FF3B3B] text-xl leading-none">✱</span>
+            <span className="font-semibold text-lg">EventPro</span>
           </div>
 
-          <div className="mt-10 pt-6 border-t border-[#E7E4E2] text-sm text-[#6B6870]">
-            © 2026 EventPro. Todos os direitos reservados.
-          </div>
+          <nav aria-label="Links do rodapé" className="flex flex-wrap gap-x-8 gap-y-2 text-sm text-white/50">
+            <a href="#top" className="hover:text-white transition-colors focus-ring rounded">Início</a>
+            <a href="#recursos" className="hover:text-white transition-colors focus-ring rounded">Recursos</a>
+            <a href="#" className="hover:text-white transition-colors focus-ring rounded">Termos de uso</a>
+            <a href="#" className="hover:text-white transition-colors focus-ring rounded">Privacidade</a>
+          </nav>
+
+          <p className="text-sm text-white/40">© 2026 EventPro. Todos os direitos reservados.</p>
         </div>
       </footer>
     </div>
