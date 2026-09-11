@@ -41,9 +41,11 @@ export default function Usuarios() {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-white/10">
-                                    <th className="px-6 py-4 text-xs font-medium tracking-wider uppercase text-white/50">
-                                        Nome
-                                    </th>
+                                    <th className="px-6 py-4 text-xs font-medium tracking-wider uppercase text-white/50">ID</th>
+                                    <th className="px-6 py-4 text-xs font-medium tracking-wider uppercase text-white/50">Nome</th>
+                                    <th className="px-6 py-4 text-xs font-medium tracking-wider uppercase text-white/50">CPF</th>
+                                    <th className="px-6 py-4 text-xs font-medium tracking-wider uppercase text-white/50">Email</th>
+                                    <th className="px-6 py-4 text-xs font-medium tracking-wider uppercase text-white/50">Status</th>
                                 </tr>
                             </thead>
                             <tbody>
