@@ -1,18 +1,35 @@
 'use client'
 
+import axios from "axios";
 import { useRouter } from "next/navigation";
+import { LoginResponse } from "../types/auth";
 
 
 
 export default function Login() {
 
-    const router = useRouter();
+  const router = useRouter();
 
-    const handlerLogin = async (formData: FormData) =>{
-        
-        router.push("/home");
+
+  const handlerLogin = async (formData: FormData) => {
+
+    try {
+      debugger;
+      const emailTela = formData.get("email")?.toString() ?? "";
+      const senhaTela = formData.get("senha")?.toString() ?? "";
+
+      var loginResposta = await axios.post<LoginResponse>("http://localhost:8080/auth/login", { email: emailTela, senha: senhaTela });
+      
+        console.log(loginResposta.status)
+        router.push("/home")
+      
+    } catch (e) {
+      console.log(e)
+      alert("Usuário e/ou senha inválidos!")
 
     }
+
+  }
 
   return (
     <>
@@ -43,6 +60,7 @@ export default function Login() {
               <input
                 type="email"
                 id="email"
+                name="email"
                 placeholder="Digite seu email"
                 className="w-full bg-[#150606] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition-colors focus:border-[#FF3B3B] focus-visible:ring-2 focus-visible:ring-[#FF3B3B] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1D0B0B]"
               />
@@ -55,6 +73,7 @@ export default function Login() {
               <input
                 type="password"
                 id="password"
+                name="senha"
                 placeholder="Digite sua senha"
                 className="w-full bg-[#150606] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none transition-colors focus:border-[#FF3B3B] focus-visible:ring-2 focus-visible:ring-[#FF3B3B] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1D0B0B]"
               />
