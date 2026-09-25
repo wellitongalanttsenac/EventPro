@@ -4,7 +4,8 @@ export class Usuario{
         public nome:string,
         public email:string,
         public status:string,
-        public cpf:string
+        public cpf:string,
+        public senha:string
     ){
 
     }

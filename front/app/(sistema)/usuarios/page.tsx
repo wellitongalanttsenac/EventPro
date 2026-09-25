@@ -29,11 +29,11 @@ export default function Usuarios() {
         <>
             <div className="min-h-screen bg-[#150606] text-[#F5EDEC] font-sans antialiased px-6 py-16">
                 <div className="max-w-5xl mx-auto flex items-center justify-between mb-10">
-                    <h1 className="text-3xl font-bold tracking-tight">Titulo</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">Listagem de Usuarios</h1>
                     <Link
                         href="/usuarios/novo"
                         className="inline-flex items-center px-6 py-3 bg-[#FF3B3B] text-[#150606] font-semibold rounded-full hover:bg-[#ff5c5c] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF3B3B]"
-                    ></Link>
+                    >Cadastrar</Link>
                 </div>
 
                 <div className="max-w-5xl mx-auto">

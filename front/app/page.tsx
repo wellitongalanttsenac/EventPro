@@ -28,6 +28,7 @@ export default function Home() {
 
   const handlerLogin = async () => {
 
+    console.log("teste!")
     router.push("/login");
 
   }
