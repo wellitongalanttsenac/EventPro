@@ -1,60 +1,97 @@
-"use client"
+"use client";
 
+import { Usuario } from "@/app/types/usuario";
+import axios from "axios";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import UsuarioForm from "../componets/UsuarioForms";
 import { useEffect, useState } from "react";
-import { Usuario } from "@/app/types/usuarios";
-import axios from "axios";
+import UsuarioForm from "../../components/UsuarioForm";
 
-export default function EditarUsuario(){
+export default function EditarUsuarioPage() {
+  const parametro = useParams();
+  const router = useRouter();
+  const codigo = Number(parametro.codigo);
 
+  const [usuario, setUsuario] = useState<Usuario | null>(null);
+  const [erro, setErro] = useState(false);
 
-    const router = useRouter();
-
-    const parametro = useParams();
-
-    const codigo = Number(parametro.codigo);
-
-    const[usuario, setUsuario] = useState<Usuario | null>(null);
-
-    useEffect(()=>{
-
-        buscarDados();
-
-    }, [])
-
-    const buscarDados = async() => {
-        const valorUsuarioBack = await axios.get<Usuario>("", codigo);
-
-        if(valorUsuarioBack.status == 200){
-
-            router.push("/usuarios");
-
-        }
+  useEffect(() => {
+    if (codigo) {
+      buscarDados();
     }
+  }, [codigo]);
 
-    if(!usuario) return(<div className="p-8"> Carregando dados...</div>)
+  const buscarDados = async () => {
+    try {
+      const resposta = await axios.get<Usuario>(
+        `http://localhost:8080/usuarios/${codigo}`
+      );
 
+      if (resposta.status === 200 && resposta.data) {
+        setUsuario(resposta.data);
+      } else {
+        setErro(true);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Não foi possível carregar os dados do usuário para edição.");
+      router.push("/usuarios");
+    }
+  };
 
-    return(
-        <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-blue-900 border border-blue-800 p-6 rounded-2xl shadow-lg">
-                <div className="space-y-1">
-                    <h1 className="text-2xl font-bold tracking-tight text-white flex items-center space-x-2">
-                        <span className="w-2.5 h-2.5 bg-blue-400 rounded-full inline-block"></span>
-                        <span>Editar Usuário {codigo}</span>
-                    </h1>
-                    <p className="text-sm text-blue-200">Preencha os dados para editar o Usuário</p>
-                </div>
-                <Link href="/usuarios" className="inline-flex items-center justify-center text-sm font-medium text-blue-200 hover:text-white bg-blue-800 hover:bg-blue-700 border border-blue-700 px-4 py-2.5 rounded-xl transition-all duration-200 shadow-sm w-full sm:w-auto">
-                    &larr; Voltar para Listagem
-                </Link>
-            </div>
-            <div className="bg-blue-900 border border-blue-800 rounded-2xl p-6 md:p-8 shadow-xl">
-                <UsuarioForm/>
-            </div>
+  if (erro) {
+    return (
+      <div className="max-w-4xl mx-auto p-8 text-center bg-[#1D0B0B] border border-white/10 rounded-3xl">
+        <p className="text-rose-400 mb-4">Usuário #{codigo} não encontrado.</p>
+        <Link
+          href="/usuarios"
+          className="text-xs text-[#FF3B3B] underline hover:text-[#ff5c5c]"
+        >
+          Voltar para listagem
+        </Link>
+      </div>
+    );
+  }
+
+  if (!usuario) {
+    return (
+      <div className="max-w-4xl mx-auto p-12 text-center bg-[#1D0B0B] border border-white/10 rounded-3xl">
+        <div className="inline-block animate-spin w-6 h-6 border-2 border-[#FF3B3B] border-t-transparent rounded-full mb-3" />
+        <p className="text-white/50 text-sm">
+          Carregando dados do organizador #{codigo}...
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Cabeçalho da página */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-[#1D0B0B] border border-white/10 p-6 rounded-3xl shadow-xl">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-[#FF3B3B] text-xl leading-none">✱</span>
+            <h1 className="text-2xl font-bold tracking-tight text-white">
+              Editar Organizador #{codigo}
+            </h1>
+          </div>
+          <p className="text-xs text-white/50">
+            Atualize as informações cadastrais do organizador selecionado
+          </p>
         </div>
-    )
 
+        <Link
+          href="/usuarios"
+          className="inline-flex items-center justify-center text-xs font-medium text-white/80 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-full transition-colors"
+        >
+          &larr; Voltar para Listagem
+        </Link>
+      </div>
+
+      {/* Cartão do Formulário */}
+      <div className="bg-[#1D0B0B] border border-white/10 rounded-3xl p-6 md:p-8 shadow-xl">
+        <UsuarioForm usuarioExistente={usuario} />
+      </div>
+    </div>
+  );
 }
