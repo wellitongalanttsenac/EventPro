@@ -1,7 +1,7 @@
 "use client";
 
 import { Usuario } from "@/app/types/usuario";
-import axios from "axios";
+import { api } from "@/app/services/api";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -23,8 +23,8 @@ export default function EditarUsuarioPage() {
 
   const buscarDados = async () => {
     try {
-      const resposta = await axios.get<Usuario>(
-        `http://localhost:8080/usuarios/${codigo}`
+      const resposta = await api.get<Usuario>(
+        `/usuarios/${codigo}`
       );
 
       if (resposta.status === 200 && resposta.data) {

@@ -1,3 +1,8 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { getOrganizadorLogado } from "@/app/services/auth";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -7,6 +12,29 @@ export default function SistemaLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+  const [autenticado, setAutenticado] = useState(false);
+
+  useEffect(() => {
+    const organizador = getOrganizadorLogado();
+    if (!organizador || !organizador.id) {
+      router.push("/login");
+    } else {
+      setAutenticado(true);
+    }
+  }, [router]);
+
+  if (!autenticado) {
+    return (
+      <div className="min-h-screen bg-[#150606] flex items-center justify-center text-white/50 text-sm">
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin w-6 h-6 border-2 border-[#FF3B3B] border-t-transparent rounded-full" />
+          <span>Verificando autenticação do organizador...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-[#150606] text-[#F5EDEC]">
       <Sidebar />

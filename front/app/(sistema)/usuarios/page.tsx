@@ -1,7 +1,7 @@
 "use client";
 
 import { Usuario } from "@/app/types/usuario";
-import axios from "axios";
+import { api } from "@/app/services/api";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -16,7 +16,7 @@ export default function UsuariosPage() {
   const carregarDados = async () => {
     setCarregando(true);
     try {
-      const resposta = await axios.get<Usuario[]>("http://localhost:8080/usuarios");
+      const resposta = await api.get<Usuario[]>("/usuarios");
       setUsuarios(resposta.data);
     } catch (error) {
       console.error(error);
@@ -33,9 +33,7 @@ export default function UsuariosPage() {
     if (!confirmou) return;
 
     try {
-      const resposta = await axios.delete(
-        `http://localhost:8080/usuarios/${usuario.id}/excluir`
-      );
+      const resposta = await api.delete(`/usuarios/${usuario.id}/excluir`);
 
       if (resposta.status === 200) {
         alert("Usuário inativado com sucesso!");
@@ -55,8 +53,8 @@ export default function UsuariosPage() {
     const novoStatus = usuario.status === "ATIVO" ? "BLOQUEADO" : "ATIVO";
 
     try {
-      const resposta = await axios.patch(
-        `http://localhost:8080/usuarios/${usuario.id}/status`,
+      const resposta = await api.patch(
+        `/usuarios/${usuario.id}/status`,
         { status: novoStatus }
       );
 

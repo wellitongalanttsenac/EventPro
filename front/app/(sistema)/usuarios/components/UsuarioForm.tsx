@@ -1,7 +1,7 @@
 "use client";
 
 import { Usuario, UsuarioFormProps } from "@/app/types/usuario";
-import axios from "axios";
+import { api } from "@/app/services/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -38,8 +38,8 @@ export default function UsuarioForm({ usuarioExistente }: UsuarioFormProps) {
     try {
       if (usuarioExistente && usuario.id) {
         // Modo Edição: Verbo HTTP PUT
-        const resposta = await axios.put(
-          `http://localhost:8080/usuarios/${usuario.id}`,
+        const resposta = await api.put(
+          `/usuarios/${usuario.id}`,
           usuario
         );
 
@@ -51,8 +51,8 @@ export default function UsuarioForm({ usuarioExistente }: UsuarioFormProps) {
         }
       } else {
         // Modo Criação: Verbo HTTP POST
-        const resposta = await axios.post(
-          "http://localhost:8080/usuarios",
+        const resposta = await api.post(
+          "/usuarios",
           usuario
         );
 

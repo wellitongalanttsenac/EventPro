@@ -1,9 +1,11 @@
 "use client";
 
-import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { LoginResponse } from "@/app/types/auth";
+import { Usuario } from "@/app/types/usuario";
+import { api } from "@/app/services/api";
+import { parseJwtPayload, setOrganizadorLogado } from "@/app/services/auth";
 import Link from "next/link";
 
 export default function LoginPage() {
@@ -17,26 +19,46 @@ export default function LoginPage() {
     setCarregando(true);
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("email")?.toString() ?? "";
+    const email = formData.get("email")?.toString().trim() ?? "";
     const senha = formData.get("senha")?.toString() ?? "";
 
     try {
-      const resposta = await axios.post<LoginResponse>(
-        "http://localhost:8080/auth/login",
-        { email, senha }
-      );
+      const resposta = await api.post<LoginResponse>("/auth/login", {
+        email,
+        senha,
+      });
 
-      if (resposta.status === 200) {
-        if (resposta.data?.token) {
-          localStorage.setItem("eventpro_token", resposta.data.token);
+      if (resposta.status === 200 && resposta.data?.token) {
+        const token = resposta.data.token;
+        const payload = parseJwtPayload(token);
+        const emailIdentificado = (payload?.sub || email).trim().toLowerCase();
+
+        // Busca dados cadastrais do organizador para capturar o ID
+        const usuariosRes = await api.get<Usuario[]>("/usuarios");
+        const usuarioEncontrado = usuariosRes.data.find(
+          (u) => (u.email || "").trim().toLowerCase() === emailIdentificado
+        );
+
+        if (usuarioEncontrado && usuarioEncontrado.id) {
+          // Grava apenas os campos necessários (sem senha nem cpf)
+          setOrganizadorLogado(
+            {
+              id: usuarioEncontrado.id,
+              nome: usuarioEncontrado.nome,
+              email: usuarioEncontrado.email,
+            },
+            token
+          );
+          router.push("/home");
+        } else {
+          setErro("Autenticação realizada, mas o cadastro do organizador não foi localizado.");
         }
-        router.push("/home");
       } else {
         setErro("Usuário e/ou senha inválidos!");
       }
     } catch (err) {
       console.error(err);
-      setErro("Falha no login. Verifique as credenciais ou a conexão com o servidor.");
+      setErro("Falha no login. Verifique as credenciais ou se o backend está ativo.");
     } finally {
       setCarregando(false);
     }

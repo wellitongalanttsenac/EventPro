@@ -1,26 +1,43 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { getOrganizadorLogado, logout, OrganizadorLogado } from "../services/auth";
 
 export default function Header() {
   const router = useRouter();
+  const [organizador, setOrganizador] = useState<OrganizadorLogado | null>(null);
+
+  useEffect(() => {
+    setOrganizador(getOrganizadorLogado());
+  }, []);
 
   const handleLogout = () => {
+    logout();
     router.push("/login");
+  };
+
+  const getIniciais = (nome?: string) => {
+    if (!nome) return "EP";
+    const partes = nome.trim().split(" ");
+    if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
+    return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
   };
 
   return (
     <header className="w-full bg-[#1D0B0B] border-b border-white/10 shadow-lg sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-full bg-[#FF3B3B]/10 border border-[#FF3B3B]/30 flex items-center justify-center text-[#FF3B3B] font-bold text-sm">
-            EP
+          <div className="w-9 h-9 rounded-full bg-[#FF3B3B]/10 border border-[#FF3B3B]/30 flex items-center justify-center text-[#FF3B3B] font-bold text-xs tracking-wider">
+            {getIniciais(organizador?.nome)}
           </div>
           <div className="flex flex-col">
             <span className="text-[#F5EDEC] font-medium text-sm">
-              Organizador EventPro
+              {organizador?.nome || "Organizador EventPro"}
             </span>
-            <span className="text-white/40 text-xs">Painel Administrativo</span>
+            <span className="text-white/40 text-xs">
+              {organizador?.email || "Painel Administrativo"}
+            </span>
           </div>
         </div>
 
