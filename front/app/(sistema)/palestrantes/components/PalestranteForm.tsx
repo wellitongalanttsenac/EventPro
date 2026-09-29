@@ -111,6 +111,7 @@ export default function PalestranteForm({
           eventoIdSelecionado={eventoId}
           onEventoChange={(id) => setEventoId(id)}
           desabilitado={Boolean(palestranteExistente?.id)}
+          nomeEventoFallback={palestranteExistente?.evento?.nome}
           label="Evento Vinculado *"
         />
         {palestranteExistente?.id && (

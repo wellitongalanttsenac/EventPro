@@ -13,6 +13,7 @@ interface SeletorEventoProps {
   rotaBase?: string;
   label?: string;
   desabilitado?: boolean;
+  nomeEventoFallback?: string;
 }
 
 export default function SeletorEvento({
@@ -21,6 +22,7 @@ export default function SeletorEvento({
   rotaBase,
   label = "Selecione o Evento:",
   desabilitado = false,
+  nomeEventoFallback,
 }: SeletorEventoProps) {
   const router = useRouter();
   const [eventos, setEventos] = useState<Evento[]>([]);
@@ -87,6 +89,37 @@ export default function SeletorEvento({
         >
           ＋ Criar Primeiro Evento
         </Link>
+      </div>
+    );
+  }
+
+  if (desabilitado && eventoIdSelecionado) {
+    const evSelecionado = eventos.find((ev) => ev.id === eventoIdSelecionado);
+    const nomeExibicao =
+      evSelecionado?.nome || nomeEventoFallback || `Evento #${eventoIdSelecionado}`;
+    const statusExibicao = evSelecionado?.status;
+
+    return (
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#150606] border border-white/10 p-4 rounded-2xl shadow-md">
+        <div className="flex items-center gap-2.5">
+          <span className="text-[#FF3B3B] text-sm">❖</span>
+          <div className="space-y-0.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50 block">
+              {label}
+            </span>
+            <span className="text-sm font-bold text-white flex items-center gap-2">
+              {nomeExibicao}
+              {statusExibicao && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full border border-white/20 bg-white/5 text-white/70 font-normal">
+                  {statusExibicao}
+                </span>
+              )}
+            </span>
+          </div>
+        </div>
+        <span className="inline-flex items-center text-[10px] font-medium bg-white/5 text-white/50 border border-white/10 px-2.5 py-1 rounded-full w-fit">
+          🔒 Somente Leitura (Fixo)
+        </span>
       </div>
     );
   }
