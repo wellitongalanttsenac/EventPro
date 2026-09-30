@@ -63,8 +63,7 @@ export default function UsuarioForm({ usuarioExistente }: UsuarioFormProps) {
           alert("Não foi possível cadastrar o usuário.");
         }
       }
-    } catch (error) {
-      console.error(error);
+    } catch {
       alert("Erro de comunicação com o servidor ao salvar o usuário.");
     } finally {
       setSalvando(false);

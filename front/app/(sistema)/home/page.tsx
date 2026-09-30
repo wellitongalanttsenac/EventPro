@@ -14,21 +14,21 @@ export default function HomePage() {
       descricao: "Cadastro de eventos, locais, datas e controle de lotes.",
       href: "/eventos",
       icone: "🎟️",
-      ativo: false,
+      ativo: true,
     },
     {
       nome: "Palestrantes",
       descricao: "Vínculo de palestrantes e especialistas às atividades do evento.",
       href: "/palestrantes",
       icone: "🎙️",
-      ativo: false,
+      ativo: true,
     },
     {
       nome: "Inscrições & Credenciamento",
       descricao: "Controle de participantes e geração de credenciais únicas.",
       href: "/inscricoes",
       icone: "🛡️",
-      ativo: false,
+      ativo: true,
     },
   ];
 

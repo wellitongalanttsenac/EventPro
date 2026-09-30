@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Evento, EventoFormProps } from "@/app/types/evento";
-import { api } from "@/app/services/api";
+import { api, isAxiosError } from "@/app/services/api";
 import { getOrganizadorLogado } from "@/app/services/auth";
 
 function formatDateForInput(dateStr?: string): string {
@@ -104,17 +104,15 @@ export default function EventoForm({ eventoExistente }: EventoFormProps) {
           alert("Não foi possível criar o evento.");
         }
       }
-    } catch (error: any) {
-      console.error(error);
-      if (error?.response?.status === 403) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 403) {
         alert("Apenas o organizador que criou o evento pode gerenciá-lo!");
-      } else if (error?.response?.status === 404) {
+      } else if (isAxiosError(error) && error.response?.status === 404) {
         alert("Evento não encontrado no sistema.");
+      } else if (isAxiosError(error) && typeof error.response?.data === "string") {
+        alert(error.response.data);
       } else {
-        alert(
-          error?.response?.data ||
-            "Erro de comunicação com o servidor ao salvar o evento."
-        );
+        alert("Erro de comunicação com o servidor ao salvar o evento.");
       }
     } finally {
       setSalvando(false);

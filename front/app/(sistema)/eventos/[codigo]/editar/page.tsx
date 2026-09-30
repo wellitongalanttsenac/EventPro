@@ -44,8 +44,7 @@ export default function EditarEventoPage() {
       } else {
         setErro(`Evento #${codigo} não encontrado.`);
       }
-    } catch (error) {
-      console.error(error);
+    } catch {
       alert("Não foi possível carregar os dados do evento para edição.");
       router.push("/eventos");
     }

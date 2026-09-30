@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { api } from "@/app/services/api";
+import { api, isAxiosError } from "@/app/services/api";
 import { getOrganizadorLogado } from "@/app/services/auth";
 import { PalestranteFormProps } from "@/app/types/palestrante";
 import SeletorEvento from "@/app/components/SeletorEvento";
@@ -85,12 +85,11 @@ export default function PalestranteForm({
           alert("Não foi possível cadastrar o palestrante.");
         }
       }
-    } catch (error: any) {
-      console.error(error);
-      if (error?.response?.status === 403) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 403) {
         alert("Acesso negado: Você só pode gerenciar palestrantes dos seus próprios eventos.");
         router.push("/eventos");
-      } else if (error?.response?.status === 404) {
+      } else if (isAxiosError(error) && error.response?.status === 404) {
         alert("Evento ou palestrante não encontrado no servidor.");
         router.push("/eventos");
       } else {

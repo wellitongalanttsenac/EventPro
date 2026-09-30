@@ -5,6 +5,8 @@ export const api = axios.create({
   baseURL: "http://localhost:8080",
 });
 
+export { isAxiosError } from "axios";
+
 // Interceptor de requisição: anexa o token JWT quando disponível
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {

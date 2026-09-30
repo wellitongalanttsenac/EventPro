@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { api } from "@/app/services/api";
+import { api, isAxiosError } from "@/app/services/api";
 import { InscricaoFormProps, CriarInscricaoRequest } from "@/app/types/inscricao";
 import SeletorEvento from "@/app/components/SeletorEvento";
 
@@ -47,9 +47,8 @@ export default function InscricaoForm({ eventoIdPredefinido }: InscricaoFormProp
       } else {
         alert("Não foi possível cadastrar a inscrição.");
       }
-    } catch (error: any) {
-      console.error(error);
-      if (error?.response?.status === 404) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 404) {
         alert("Evento não encontrado no servidor.");
         router.push("/eventos");
       } else {

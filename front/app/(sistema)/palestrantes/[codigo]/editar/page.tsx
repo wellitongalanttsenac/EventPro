@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { api } from "@/app/services/api";
+import { api, isAxiosError } from "@/app/services/api";
 import { getOrganizadorLogado } from "@/app/services/auth";
 import { Palestrante } from "@/app/types/palestrante";
 import { Evento } from "@/app/types/evento";
@@ -66,12 +66,11 @@ function EditarPalestranteConteudo() {
       } else {
         setErro(`Palestrante #${palestranteId} não encontrado neste evento.`);
       }
-    } catch (error: any) {
-      console.error(error);
-      if (error?.response?.status === 403) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 403) {
         alert("Acesso negado ao gerenciar este palestrante.");
         router.push("/eventos");
-      } else if (error?.response?.status === 404) {
+      } else if (isAxiosError(error) && error.response?.status === 404) {
         alert("Palestrante ou evento não encontrado no servidor.");
         router.push(`/palestrantes?eventoId=${evId}`);
       } else {

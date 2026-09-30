@@ -41,8 +41,7 @@ function NovoPalestranteConteudo() {
         alert("Evento especificado não foi encontrado.");
         router.push("/eventos");
       }
-    } catch (error: any) {
-      console.error(error);
+    } catch {
       alert("Acesso negado ou evento inexistente.");
       router.push("/eventos");
     } finally {

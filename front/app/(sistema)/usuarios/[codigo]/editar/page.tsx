@@ -32,8 +32,7 @@ export default function EditarUsuarioPage() {
       } else {
         setErro(true);
       }
-    } catch (error) {
-      console.error(error);
+    } catch {
       alert("Não foi possível carregar os dados do usuário para edição.");
       router.push("/usuarios");
     }

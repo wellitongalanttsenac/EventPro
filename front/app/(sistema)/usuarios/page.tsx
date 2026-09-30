@@ -18,8 +18,7 @@ export default function UsuariosPage() {
     try {
       const resposta = await api.get<Usuario[]>("/usuarios");
       setUsuarios(resposta.data);
-    } catch (error) {
-      console.error(error);
+    } catch {
       alert("Erro ao carregar lista de usuários! Verifique se o backend está em execução.");
     } finally {
       setCarregando(false);
@@ -41,8 +40,7 @@ export default function UsuariosPage() {
       } else {
         alert("Erro ao inativar usuário!");
       }
-    } catch (error) {
-      console.error(error);
+    } catch {
       alert("Falha na comunicação com o servidor ao excluir.");
     }
   };
@@ -64,8 +62,7 @@ export default function UsuariosPage() {
       } else {
         alert("Erro ao atualizar status!");
       }
-    } catch (error) {
-      console.error(error);
+    } catch {
       alert("Falha na comunicação com o servidor ao alterar status.");
     }
   };

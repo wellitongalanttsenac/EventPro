@@ -69,8 +69,7 @@ function DetalheInscricaoConteudo() {
         alert("Inscrição não encontrada no servidor.");
         router.push(`/inscricoes?eventoId=${evId}`);
       }
-    } catch (error: any) {
-      console.error(error);
+    } catch {
       alert("Não foi possível carregar os detalhes da inscrição.");
       router.push(`/inscricoes?eventoId=${evId}`);
     } finally {
@@ -85,8 +84,7 @@ function DetalheInscricaoConteudo() {
       await navigator.clipboard.writeText(inscricao.credencial);
       setCopiado(true);
       setTimeout(() => setCopiado(false), 2500);
-    } catch (err) {
-      console.error("Falha ao copiar credencial:", err);
+    } catch {
       alert(`Código da credencial: ${inscricao.credencial}`);
     }
   };
@@ -113,8 +111,7 @@ function DetalheInscricaoConteudo() {
           `Inscrição confirmada com sucesso!\nCredencial gerada: ${resp.data.credencial}`
         );
       }
-    } catch (error) {
-      console.error(error);
+    } catch {
       alert("Erro ao confirmar inscrição.");
     } finally {
       setConfirmando(false);

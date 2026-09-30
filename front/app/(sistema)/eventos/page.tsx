@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Evento, EnumStatusEvento } from "@/app/types/evento";
-import { api } from "@/app/services/api";
+import { api, isAxiosError } from "@/app/services/api";
 import { getOrganizadorLogado, OrganizadorLogado } from "@/app/services/auth";
 
 function formatarDataHora(dataIso?: string) {
@@ -36,8 +36,7 @@ export default function EventosPage() {
     try {
       const resposta = await api.get<Evento[]>("/eventos");
       setEventos(resposta.data);
-    } catch (error) {
-      console.error(error);
+    } catch {
       alert("Erro ao carregar lista de eventos! Verifique se o backend está em execução.");
     } finally {
       setCarregando(false);
@@ -63,9 +62,8 @@ export default function EventosPage() {
       } else {
         alert("Erro ao cancelar evento!");
       }
-    } catch (error: any) {
-      console.error(error);
-      if (error?.response?.status === 403) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 403) {
         alert("Apenas o organizador que criou o evento pode cancelá-lo!");
       } else {
         alert("Falha na comunicação com o servidor ao cancelar evento.");
@@ -92,9 +90,8 @@ export default function EventosPage() {
       } else {
         alert("Erro ao atualizar status do evento!");
       }
-    } catch (error: any) {
-      console.error(error);
-      if (error?.response?.status === 403) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 403) {
         alert("Apenas o organizador que criou o evento pode alterar seu status!");
       } else {
         alert("Falha na comunicação com o servidor ao alterar status.");

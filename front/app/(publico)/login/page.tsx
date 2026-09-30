@@ -56,8 +56,7 @@ export default function LoginPage() {
       } else {
         setErro("Usuário e/ou senha inválidos!");
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
       setErro("Falha no login. Verifique as credenciais ou se o backend está ativo.");
     } finally {
       setCarregando(false);

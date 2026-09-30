@@ -46,8 +46,8 @@ export default function SeletorEvento({
         );
         setEventos(meusEventos);
       }
-    } catch (error) {
-      console.error("Erro ao carregar eventos no SeletorEvento:", error);
+    } catch {
+      // Ignora erro e finaliza carregamento
     } finally {
       setCarregando(false);
     }

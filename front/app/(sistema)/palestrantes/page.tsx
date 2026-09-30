@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { api } from "@/app/services/api";
+import { api, isAxiosError } from "@/app/services/api";
 import { getOrganizadorLogado } from "@/app/services/auth";
 import { Palestrante } from "@/app/types/palestrante";
 import { Evento } from "@/app/types/evento";
@@ -52,11 +52,10 @@ function PalestrantesConteudo() {
         alert("Evento não encontrado.");
         router.push("/eventos");
       }
-    } catch (error: any) {
-      console.error(error);
-      if (error?.response?.status === 404) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 404) {
         alert("O evento informado na URL não foi encontrado.");
-      } else if (error?.response?.status === 403) {
+      } else if (isAxiosError(error) && error.response?.status === 403) {
         alert("Acesso negado para este evento.");
       } else {
         alert("Não foi possível carregar os dados do evento.");
@@ -76,8 +75,7 @@ function PalestrantesConteudo() {
       } else {
         setPalestrantes([]);
       }
-    } catch (error) {
-      console.error("Erro ao carregar palestrantes:", error);
+    } catch {
       setPalestrantes([]);
     } finally {
       setCarregando(false);
@@ -112,9 +110,8 @@ function PalestrantesConteudo() {
       } else {
         alert("Não foi possível excluir o palestrante.");
       }
-    } catch (error: any) {
-      console.error(error);
-      if (error?.response?.status === 403) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 403) {
         alert("Apenas o organizador dono do evento pode excluir palestrantes!");
       } else {
         alert("Falha na comunicação com o servidor ao excluir palestrante.");

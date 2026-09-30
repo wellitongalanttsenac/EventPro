@@ -3,15 +3,21 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+interface SidebarLink {
+  label: string;
+  href: string;
+  badge?: string;
+}
+
 export default function Sidebar() {
   const pathname = usePathname();
 
-  const links = [
+  const links: SidebarLink[] = [
     { label: "Home", href: "/home" },
     { label: "Usuários", href: "/usuarios" },
-    { label: "Eventos", href: "/eventos", badge: "Em breve" },
-    { label: "Palestrantes", href: "/palestrantes", badge: "Em breve" },
-    { label: "Inscrições", href: "/inscricoes", badge: "Em breve" },
+    { label: "Eventos", href: "/eventos" },
+    { label: "Palestrantes", href: "/palestrantes" },
+    { label: "Inscrições", href: "/inscricoes" },
   ];
 
   return (

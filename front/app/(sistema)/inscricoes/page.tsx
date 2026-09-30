@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { api } from "@/app/services/api";
+import { api, isAxiosError } from "@/app/services/api";
 import { getOrganizadorLogado } from "@/app/services/auth";
 import { Inscricao, AtualizarStatusInscricaoRequest } from "@/app/types/inscricao";
 import { Evento } from "@/app/types/evento";
@@ -52,11 +52,10 @@ function InscricoesConteudo() {
         alert("Evento não encontrado.");
         router.push("/eventos");
       }
-    } catch (error: any) {
-      console.error(error);
-      if (error?.response?.status === 404) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 404) {
         alert("O evento informado na URL não foi encontrado.");
-      } else if (error?.response?.status === 403) {
+      } else if (isAxiosError(error) && error.response?.status === 403) {
         alert("Acesso negado para este evento.");
       } else {
         alert("Não foi possível carregar os dados do evento.");
@@ -83,9 +82,8 @@ function InscricoesConteudo() {
       } else {
         setInscricoes([]);
       }
-    } catch (error: any) {
-      console.error("Erro ao carregar inscrições:", error);
-      if (error?.response?.status === 403) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 403) {
         alert("Apenas o organizador dono do evento pode listar inscrições!");
         router.push("/eventos");
       }
@@ -136,9 +134,8 @@ function InscricoesConteudo() {
       } else {
         alert("Não foi possível confirmar a inscrição.");
       }
-    } catch (error: any) {
-      console.error(error);
-      if (error?.response?.status === 403) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 403) {
         alert("Apenas o organizador dono do evento pode confirmar inscrições!");
       } else {
         alert("Falha na comunicação com o servidor ao confirmar inscrição.");
@@ -184,9 +181,8 @@ function InscricoesConteudo() {
       } else {
         alert("Não foi possível cancelar a inscrição.");
       }
-    } catch (error: any) {
-      console.error(error);
-      if (error?.response?.status === 403) {
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 403) {
         alert("Apenas o organizador dono do evento pode cancelar inscrições!");
       } else {
         alert("Falha na comunicação com o servidor ao cancelar inscrição.");
