@@ -1,11 +1,11 @@
-package com.example.eventpro.controller;
+package com.example.eventpro.presentation;
 
-import com.example.eventpro.DTOs.AtualizarStatusUsuarioRequest;
-import com.example.eventpro.entities.EnumStatus;
-import com.example.eventpro.entities.Usuario;
+import com.example.eventpro.application.DTOs.UsuarioResponse;
+import com.example.eventpro.application.service.UsuarioService;
 import com.example.eventpro.repository.UsuarioRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,13 +17,13 @@ import org.springframework.web.bind.annotation.*;
 public class UsuarioController {
 
     @Autowired
-    private UsuarioRepository usuarioRepository;
+    private UsuarioService usuarioService;
 
     @GetMapping
     @Operation(summary = "Método de consulta de lista de organizadores", description = "Método responsável pela consulta de todos os organizadores sem filtros")
-    public ResponseEntity<?> listarTodos() {
+    public ResponseEntity<List<UsuarioResponse>> listarTodos() {
 
-        return ResponseEntity.ok(usuarioRepository.findAll());
+        return ResponseEntity.ok(usuarioService.listarTodosOsUsuarioParaGrid());
     }
 
     @GetMapping("/{id}")

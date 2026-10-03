@@ -1,6 +1,6 @@
-package com.example.eventpro.DTOs;
+package com.example.eventpro.application.DTOs;
 
-import com.example.eventpro.entities.EnumStatus;
+import com.example.eventpro.domain.entities.EnumStatus;
 
 public record AtualizarStatusUsuarioRequest(EnumStatus status) {
 }
