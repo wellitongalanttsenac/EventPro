@@ -36,9 +36,6 @@ public class AuthController {
     @Operation(summary = "Autenticação de organizadores", description = "Método de login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
 
-        System.out.println(loginRequest.email());
-        System.out.println(loginRequest.senha());
-
         if (usuarioRepository.existsUsuarioByEmailAndSenha(loginRequest.email(), loginRequest.senha())) {
 
             var token = tokenService.geraToken(loginRequest.email());

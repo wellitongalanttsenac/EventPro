@@ -26,7 +26,7 @@ public class Palestrante {
 
     // Todo Palestrante está vinculado a um Evento especifico.
     // Quem gerencia esse Palestrante é o Organizador dono do Evento.
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne()
     @JoinColumn(name = "evento_id")
     private Evento evento;
 }

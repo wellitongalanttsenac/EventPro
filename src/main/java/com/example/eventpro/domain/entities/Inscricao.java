@@ -35,7 +35,9 @@ public class Inscricao {
 
     // Toda Inscrição pertence a um Evento. Quem gerencia (confirma/cancela) é o
     // Organizador dono do Evento.
-    @ManyToOne(fetch = FetchType.EAGER)
+    // @ManyToOne(fetch = FetchType.EAGER) EAGER faz com que a entidade seja carregada inteira antes de ser acessada, por padrao ja é EAGER
+    // @ManyToOne(fetch = FetchType.LAZY) Faz com que a entidade so seja chamada quando necesario.
+    @ManyToOne()
     @JoinColumn(name = "evento_id")
     private Evento evento;
 }
