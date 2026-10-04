@@ -1,4 +1,4 @@
-package com.example.eventpro.service;
+package com.example.eventpro.application.service;
 
 import org.springframework.stereotype.Service;
 

@@ -1,4 +1,4 @@
-package com.example.eventpro.configuration;
+package com.example.eventpro.infra.configuration;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;

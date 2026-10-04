@@ -1,136 +1,73 @@
-package com.example.eventpro.controller;
+package com.example.eventpro.presentation;
 
-import com.example.eventpro.DTOs.AtualizarStatusInscricaoRequest;
-import com.example.eventpro.DTOs.CriarInscricaoRequest;
-import com.example.eventpro.entities.EnumStatusInscricao;
-import com.example.eventpro.entities.Evento;
-import com.example.eventpro.entities.Inscricao;
-import com.example.eventpro.repository.EventoRepository;
-import com.example.eventpro.repository.InscricaoRepository;
-import com.example.eventpro.service.CredencialService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.eventpro.application.DTOs.inscricao.AtualizarStatusInscricaoRequest;
+import com.example.eventpro.application.DTOs.inscricao.CriarInscricaoRequest;
+import com.example.eventpro.application.DTOs.inscricao.InscricaoResponse;
+import com.example.eventpro.application.service.InscricaoService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 // Regra de negócio central: o Organizador só gerencia as Inscrições dos Eventos que ele mesmo criou.
-// A criação da inscrição é feita pelo participante (não exige ser o dono do evento),
-// mas a gestão (confirmar/cancelar) exige que o organizadorId seja o dono do evento.
+// O eventoId só aparece na rota quando é necessário (listar e criar), nas demais a inscrição já identifica o evento.
+// Existem duas formas de nomear es estruturar a rota, por subrecursos/hieranquia da api, a inscrição é um sub recurso do evento, logo (evento/incrição...)
+// Ou o raso, onde so sera utilizado o pai quando necessario.
 @RestController
-@RequestMapping("/eventos/{eventoId}/inscricoes")
+@RequestMapping
 @Tag(name = "Inscrições", description = "Grupo de API responsável pela inscrição de participantes em Eventos e geração da credencial de confirmação")
 public class InscricaoController {
 
     @Autowired
-    private InscricaoRepository inscricaoRepository;
+    private InscricaoService inscricaoService;
 
-    @Autowired
-    private EventoRepository eventoRepository;
-
-    @Autowired
-    private CredencialService credencialService;
-
-    @GetMapping
+    @GetMapping("/eventos/{eventoId}/inscricoes")
     @Operation(summary = "Método de consulta das inscrições de um evento", description = "Método responsável por listar as inscrições de um evento. Somente o organizador dono do evento pode consultar")
-    public ResponseEntity<?> listarTodas(@PathVariable Long eventoId, @RequestParam Long organizadorId) {
+    public ResponseEntity<List<InscricaoResponse>> listarTodas(@PathVariable Long eventoId, @RequestParam Long organizadorId) {
 
-        Evento evento = eventoRepository.findById(eventoId).orElse(null);
-        if (evento == null) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(inscricaoService.listarInscricoesDoEvento(eventoId, organizadorId));
 
-        if (!organizadorEhDono(evento, organizadorId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Apenas o organizador que criou o evento pode gerenciar as inscrições!");
-        }
-
-        return ResponseEntity.ok(inscricaoRepository.findByEventoId(eventoId));
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("inscricoes/{inscricaoId}")
     @Operation(summary = "Método de consulta de inscrição por id", description = "Método responsável pela consulta de uma inscrição, incluindo a credencial gerada quando confirmada")
-    public ResponseEntity<Inscricao> buscarPorId(@PathVariable Long eventoId, @PathVariable Long id) {
+    public ResponseEntity<InscricaoResponse> buscarPorId(@PathVariable Long inscricaoId) {
 
-        Inscricao inscricaoBanco = inscricaoRepository.findById(id).orElse(null);
-        if (inscricaoBanco == null || !inscricaoBanco.getEvento().getId().equals(eventoId)) {
-            return ResponseEntity.notFound().build();
-        }
+        InscricaoResponse inscricaoBanco = inscricaoService.buscarInscricaoPorId(inscricaoId);
+
         return ResponseEntity.ok(inscricaoBanco);
     }
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/evento/{eventoId}/inscricoes")
     @Operation(summary = "Método de inscrição em um evento", description = "Método responsável por registrar a inscrição de um participante em um evento. A inscrição nasce com status PENDENTE")
-    public ResponseEntity<?> criar(@PathVariable Long eventoId, @RequestBody CriarInscricaoRequest request) {
+    public ResponseEntity<InscricaoResponse> criar(@PathVariable Long eventoId, @RequestBody CriarInscricaoRequest inscricaoRequest) {
 
-        Evento evento = eventoRepository.findById(eventoId).orElse(null);
-        if (evento == null) {
-            return ResponseEntity.notFound().build();
-        }
+        InscricaoResponse inscricaoCriadaBanco = inscricaoService.criarInscricao(eventoId, inscricaoRequest);
 
-        Inscricao inscricao = new Inscricao();
-        inscricao.setNomeParticipante(request.nomeParticipante());
-        inscricao.setEmailParticipante(request.emailParticipante());
-        inscricao.setStatus(EnumStatusInscricao.PENDENTE);
-        inscricao.setEvento(evento);
-
-        var inscricaoBd = inscricaoRepository.save(inscricao);
-        return ResponseEntity.ok(inscricaoBd);
+        return ResponseEntity.status(HttpStatus.CREATED).body(inscricaoCriadaBanco);
     }
 
-    @PatchMapping("/{id}/status")
+    @PatchMapping("inscricoes/{inscricaoId}/status")
     @Operation(summary = "Método de alterar status da inscrição", description = "Método responsável por confirmar ou cancelar uma inscrição. Somente o organizador dono do evento pode alterar. Ao confirmar, uma credencial única é gerada")
-    public ResponseEntity<?> atualizarStatus(@PathVariable Long eventoId, @PathVariable Long id, @RequestParam Long organizadorId, @RequestBody AtualizarStatusInscricaoRequest statusRequest) {
+    public ResponseEntity<InscricaoResponse> atualizarStatus(@PathVariable Long inscricaoId, @RequestParam Long organizadorId, @RequestBody AtualizarStatusInscricaoRequest statusRequest) {
 
-        Evento evento = eventoRepository.findById(eventoId).orElse(null);
-        if (evento == null) {
-            return ResponseEntity.notFound().build();
-        }
+        InscricaoResponse inscricaoAlteradaBanco = inscricaoService.atualizarStatusInscricao(inscricaoId, organizadorId, statusRequest);
 
-        if (!organizadorEhDono(evento, organizadorId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Apenas o organizador que criou o evento pode gerenciar as inscrições!");
-        }
-
-        Inscricao inscricaoBanco = inscricaoRepository.findById(id).orElse(null);
-        if (inscricaoBanco == null || !inscricaoBanco.getEvento().getId().equals(eventoId)) {
-            return ResponseEntity.notFound().build();
-        }
-
-        inscricaoBanco.setStatus(statusRequest.status());
-
-        if (statusRequest.status() == EnumStatusInscricao.CONFIRMADA && inscricaoBanco.getCredencial() == null) {
-            inscricaoBanco.setCredencial(credencialService.gerarCredencial());
-        }
-
-        inscricaoRepository.save(inscricaoBanco);
-        return ResponseEntity.ok(inscricaoBanco);
+        return ResponseEntity.ok(inscricaoAlteradaBanco);
     }
 
-    @DeleteMapping("/{id}/excluir")
+    @DeleteMapping("inscricoes/{inscricaoId}/excluir")
     @Operation(summary = "Método de cancelamento de inscrição", description = "Método responsável pelo cancelamento de uma inscrição. Somente o organizador dono do evento pode cancelar")
-    public ResponseEntity<?> excluir(@PathVariable Long eventoId, @PathVariable Long id, @RequestParam Long organizadorId) {
+    public ResponseEntity<Void> cancelar(@PathVariable Long inscricaoId, @RequestParam Long organizadorId) {
 
-        Evento evento = eventoRepository.findById(eventoId).orElse(null);
-        if (evento == null) {
-            return ResponseEntity.notFound().build();
-        }
+        inscricaoService.cancelarInscricaoPorId(inscricaoId, organizadorId);
 
-        if (!organizadorEhDono(evento, organizadorId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Apenas o organizador que criou o evento pode gerenciar as inscrições!");
-        }
-
-        Inscricao inscricaoBanco = inscricaoRepository.findById(id).orElse(null);
-        if (inscricaoBanco == null || !inscricaoBanco.getEvento().getId().equals(eventoId)) {
-            return ResponseEntity.notFound().build();
-        }
-
-        inscricaoBanco.setStatus(EnumStatusInscricao.CANCELADA);
-        inscricaoRepository.save(inscricaoBanco);
         return ResponseEntity.ok().build();
-    }
-
-    private boolean organizadorEhDono(Evento evento, Long organizadorId) {
-        return evento.getOrganizador() != null && evento.getOrganizador().getId().equals(organizadorId);
     }
 }

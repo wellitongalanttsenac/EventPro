@@ -5,13 +5,11 @@ import com.example.eventpro.application.DTOs.usuario.AtualizarUsuarioRequestDTO;
 import com.example.eventpro.application.DTOs.usuario.CriarUsuarioRequestDTO;
 import com.example.eventpro.application.DTOs.usuario.UsuarioResponse;
 import com.example.eventpro.application.service.UsuarioService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -66,20 +64,14 @@ public class UsuarioController {
 
         return ResponseEntity.ok(usuarioAlteradoBanco);
 
-        
-
     }
 
-//     @DeleteMapping("/{id}/excluir")
-//     @Operation(summary = "Método de inativação de cadastro", description = "Método responsável pela inativação do cadastro do organizador")
-//     public ResponseEntity<Void> excluir(@PathVariable Long id) {
+    @DeleteMapping("/{id}/excluir")
+    @Operation(summary = "Método de inativação de cadastro", description = "Método responsável pela inativação do cadastro do organizador")
+    public ResponseEntity<Void> excluir(@PathVariable Long id) {
 
-//         Usuario usuarioBanco = usuarioRepository.findById(id).orElse(null);
-//         if (usuarioBanco != null) {
-//             usuarioBanco.setStatus(EnumStatus.EXCLUIDO);
-//             usuarioRepository.save(usuarioBanco);
-//             return ResponseEntity.ok().build();
-//         }
-//         return ResponseEntity.notFound().build();
-//     }
+        usuarioService.excluirUsuarioPorId(id);
+        
+        return ResponseEntity.ok().build();
+    }
 }

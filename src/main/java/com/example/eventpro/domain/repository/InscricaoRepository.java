@@ -1,11 +1,12 @@
-package com.example.eventpro.repository;
+package com.example.eventpro.domain.repository;
 
-import com.example.eventpro.entities.EnumStatusInscricao;
-import com.example.eventpro.entities.Inscricao;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import com.example.eventpro.domain.entities.EnumStatusInscricao;
+import com.example.eventpro.domain.entities.Inscricao;
 
 @Repository
 public interface InscricaoRepository extends JpaRepository<Inscricao, Long> {

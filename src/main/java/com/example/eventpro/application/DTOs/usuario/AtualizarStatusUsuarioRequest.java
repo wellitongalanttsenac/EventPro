@@ -1,4 +1,4 @@
-package com.example.eventpro.application.DTOs;
+package com.example.eventpro.application.DTOs.usuario;
 
 import com.example.eventpro.domain.entities.EnumStatus;
 

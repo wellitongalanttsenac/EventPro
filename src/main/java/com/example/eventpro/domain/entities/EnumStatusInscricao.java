@@ -1,4 +1,4 @@
-package com.example.eventpro.entities;
+package com.example.eventpro.domain.entities;
 
 public enum EnumStatusInscricao {
     PENDENTE,

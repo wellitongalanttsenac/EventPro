@@ -1,4 +1,4 @@
-package com.example.eventpro.DTOs;
+package com.example.eventpro.application.DTOs.evento;
 
 import java.util.Date;
 

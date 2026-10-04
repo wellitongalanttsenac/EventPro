@@ -1,20 +1,20 @@
-package com.example.eventpro.controller;
+package com.example.eventpro.presentation;
 
-import com.example.eventpro.DTOs.AtualizarStatusEventoRequest;
-import com.example.eventpro.DTOs.CriarEventoRequest;
-import com.example.eventpro.entities.EnumStatusEvento;
-import com.example.eventpro.entities.Evento;
-import com.example.eventpro.entities.Usuario;
-import com.example.eventpro.repository.EventoRepository;
-import com.example.eventpro.repository.UsuarioRepository;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import com.example.eventpro.application.DTOs.evento.AtualizarEventoRequestDTO;
+import com.example.eventpro.application.DTOs.evento.AtualizarStatusEventoRequest;
+import com.example.eventpro.application.DTOs.evento.CriarEventoRequest;
+import com.example.eventpro.application.DTOs.evento.EventoResponse;
+import com.example.eventpro.application.service.EventoService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/eventos")
@@ -22,117 +22,58 @@ import java.util.List;
 public class EventoController {
 
     @Autowired
-    private EventoRepository eventoRepository;
-
-    @Autowired
-    private UsuarioRepository usuarioRepository;
+    private EventoService eventoService;
 
     @GetMapping
     @Operation(summary = "Método de consulta de lista de eventos", description = "Método responsável pela consulta de todos os eventos sem filtros")
-    public ResponseEntity<List<Evento>> listarTodos() {
-        return ResponseEntity.ok(eventoRepository.findAll());
+    public ResponseEntity<List<EventoResponse>> listarTodos() {
+
+        return ResponseEntity.ok(eventoService.listarTodosOsEventos());
+
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{eventoId}")
     @Operation(summary = "Método de consulta de evento por id", description = "Método responsável pela consulta de um evento por id")
-    public ResponseEntity<Evento> buscarPorId(@PathVariable Long id) {
+    public ResponseEntity<EventoResponse> buscarPorId(@PathVariable Long eventoId) {
 
-        Evento eventoBanco = eventoRepository.findById(id).orElse(null);
-        if (eventoBanco != null) {
-            return ResponseEntity.ok(eventoBanco);
-        }
-        return ResponseEntity.notFound().build();
-    }
+        EventoResponse eventoBanco = eventoService.buscarEventoPorId(eventoId);
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Método de criação de evento", description = "Método responsável pela criação de um evento. O organizadorId informado se torna o dono do evento")
-    public ResponseEntity<?> criar(@RequestBody CriarEventoRequest request) {
-
-        Usuario organizador = usuarioRepository.findById(request.organizadorId()).orElse(null);
-        if (organizador == null) {
-            return ResponseEntity.badRequest().body("Organizador informado não existe!");
-        }
-
-        Evento evento = new Evento();
-        evento.setNome(request.nome());
-        evento.setDescricao(request.descricao());
-        evento.setDataEvento(request.dataEvento());
-        evento.setLocal(request.local());
-        evento.setStatus(EnumStatusEvento.ABERTO);
-        evento.setOrganizador(organizador);
-
-        var eventoBanco = eventoRepository.save(evento);
         return ResponseEntity.ok(eventoBanco);
     }
 
-    @PatchMapping("/{id}/status")
+    @PostMapping
+    @Operation(summary = "Método de criação de evento", description = "Método responsável pela criação de um evento. O organizadorId informado se torna o dono do evento")
+    public ResponseEntity<EventoResponse> criar(@RequestBody CriarEventoRequest eventoRequest) {
+
+        EventoResponse eventoCriadoBanco = eventoService.criarEvento(eventoRequest);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(eventoCriadoBanco);
+    }
+
+    @PatchMapping("/{eventoId}/status")
     @Operation(summary = "Método de alterar Status", description = "Método responsável pela alteração dos status dos eventos. Somente o organizador dono do evento pode alterar")
-    public ResponseEntity<?> atualizarStatus(@PathVariable Long id, @RequestParam Long organizadorId, @RequestBody AtualizarStatusEventoRequest statusRequest) {
+    public ResponseEntity<Void> atualizarStatus(@PathVariable Long eventoId, @RequestParam Long organizadorId, @RequestBody AtualizarStatusEventoRequest statusRequest) {
 
-        Evento eventoBanco = eventoRepository.findById(id).orElse(null);
-        if (eventoBanco == null) {
-            return ResponseEntity.notFound().build();
-        }
+        eventoService.atualizarStatusEvento(eventoId, organizadorId, statusRequest);
 
-        if (!organizadorEhDono(eventoBanco, organizadorId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Apenas o organizador que criou o evento pode gerenciá-lo!");
-        }
-
-        eventoBanco.setStatus(statusRequest.status());
-        eventoRepository.save(eventoBanco);
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{eventoId}")
     @Operation(summary = "Método de alterar informações do evento", description = "Método responsável pela alteração de eventos. Somente o organizador dono do evento pode alterar")
-    public ResponseEntity<?> atualizarEvento(@PathVariable Long id, @RequestParam Long organizadorId, @RequestBody Evento evento) {
+    public ResponseEntity<EventoResponse> atualizarEvento(@PathVariable Long eventoId, @RequestParam Long organizadorId, @RequestBody AtualizarEventoRequestDTO eventoRequest) {
 
-        try {
-            Evento eventoBanco = eventoRepository.findById(id).orElse(null);
+        EventoResponse eventoAlteradoBanco = eventoService.atualizarEvento(eventoId, organizadorId, eventoRequest);
 
-            if (eventoBanco == null) {
-                return ResponseEntity.notFound().build();
-            }
-
-            if (!organizadorEhDono(eventoBanco, organizadorId)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Apenas o organizador que criou o evento pode gerenciá-lo!");
-            }
-
-            eventoBanco.setNome(evento.getNome());
-            eventoBanco.setDescricao(evento.getDescricao());
-            eventoBanco.setDataEvento(evento.getDataEvento());
-            eventoBanco.setLocal(evento.getLocal());
-            eventoBanco.setStatus(evento.getStatus());
-            eventoRepository.save(eventoBanco);
-
-            return ResponseEntity.ok().build();
-
-        } catch (RuntimeException e) {
-            throw new RuntimeException(e);
-        }
+        return ResponseEntity.ok(eventoAlteradoBanco);
     }
 
-    @DeleteMapping("/{id}/excluir")
+    @DeleteMapping("/{eventoId}/excluir")
     @Operation(summary = "Método de cancelamento de evento", description = "Método responsável pelo cancelamento do evento. Somente o organizador dono do evento pode excluir")
-    public ResponseEntity<?> excluir(@PathVariable Long id, @RequestParam Long organizadorId) {
+    public ResponseEntity<Void> cancelar(@PathVariable Long eventoId, @RequestParam Long organizadorId) {
 
-        Evento eventoBanco = eventoRepository.findById(id).orElse(null);
-        if (eventoBanco == null) {
-            return ResponseEntity.notFound().build();
-        }
+        eventoService.cancelarEventoPorId(eventoId, organizadorId);
 
-        if (!organizadorEhDono(eventoBanco, organizadorId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Apenas o organizador que criou o evento pode gerenciá-lo!");
-        }
-
-        eventoBanco.setStatus(EnumStatusEvento.CANCELADO);
-        eventoRepository.save(eventoBanco);
         return ResponseEntity.ok().build();
-    }
-
-    // Regra de negócio central: só o organizador que criou o evento pode gerenciá-lo.
-    private boolean organizadorEhDono(Evento evento, Long organizadorId) {
-        return evento.getOrganizador() != null && evento.getOrganizador().getId().equals(organizadorId);
     }
 }

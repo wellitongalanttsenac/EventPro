@@ -1,4 +1,4 @@
-package com.example.eventpro.service;
+package com.example.eventpro.application.service;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
@@ -8,7 +8,6 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.security.auth.Subject;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
