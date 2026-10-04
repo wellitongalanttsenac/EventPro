@@ -2,7 +2,6 @@ package com.example.eventpro.application.service;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -15,22 +14,22 @@ import com.example.eventpro.domain.entities.Evento;
 import com.example.eventpro.domain.entities.Inscricao;
 import com.example.eventpro.domain.repository.InscricaoRepository;
 
+import lombok.RequiredArgsConstructor;
+
 // Regra de negócio central: o Organizador só gerencia as Inscrições dos Eventos que ele mesmo criou.
 // A criação da inscrição é feita pelo participante (não exige ser o dono do evento),
 // mas a gestão (confirmar/cancelar) exige que o organizadorId seja o dono do evento.
 @Service
+@RequiredArgsConstructor 
 public class InscricaoService {
 
     private static final String MENSAGEM_ORGANIZADOR_NAO_E_DONO_DO_EVENTO = "Apenas o organizador que criou o evento pode gerenciar as inscricoes!";
 
-    @Autowired
-    private InscricaoRepository inscricaoRepository;
+    private final InscricaoRepository inscricaoRepository;
 
-    @Autowired
-    private EventoService eventoService;
+    private final EventoService eventoService;
 
-    @Autowired
-    private CredencialService credencialService;
+    private final CredencialService credencialService;
 
     public List<InscricaoResponse> listarInscricoesDoEvento(Long eventoId, Long organizadorId) {
 

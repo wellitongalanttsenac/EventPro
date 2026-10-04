@@ -1,6 +1,5 @@
 package com.example.eventpro.application.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -14,14 +13,15 @@ import com.example.eventpro.application.DTOs.usuario.RedefinirSenhaRequest;
 import com.example.eventpro.domain.entities.Usuario;
 import com.example.eventpro.repository.UsuarioRepository;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor 
 public class AuthService {
 
-    @Autowired
-    private TokenService tokenService;
+    private final TokenService tokenService;
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
+    private final UsuarioRepository usuarioRepository;
 
     public LoginResponse autenticarOrganizador(LoginRequest loginRequest) {
 

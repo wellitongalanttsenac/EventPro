@@ -1,6 +1,5 @@
 package com.example.eventpro.application.service;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,14 +12,17 @@ import com.example.eventpro.domain.entities.EnumStatus;
 import com.example.eventpro.domain.entities.Usuario;
 import com.example.eventpro.repository.UsuarioRepository;
 
+import lombok.RequiredArgsConstructor;
+
 
 // Serve para criar uma instancia(um bean), igual a um componente, serve mais para semantica e legibilidade
 // Bean é um objeto java gerenciado pelo springboot, facilita na instancia, injeção de dependencia...
 @Service 
+@RequiredArgsConstructor // tag lambok que gera o construtor com os argumentos obrigatorios que voce definil como final
 public class UsuarioService {
 
-    @Autowired 
-    public UsuarioRepository usuarioRepository;
+    // Removemos o @Autowired e adicionamos um final para que ele seja atribuido apenas na instacia e nao possa ser reatribuido
+    private final UsuarioRepository usuarioRepository;
 
     public List<UsuarioResponse> listarTodosOsUsuarioParaGrid() {
 
@@ -29,7 +31,6 @@ public class UsuarioService {
         .map(UsuarioResponse::new)
         .toList();
     }
-
 
     public UsuarioResponse buscarUsuarioPorId(@PathVariable Long id) {
 

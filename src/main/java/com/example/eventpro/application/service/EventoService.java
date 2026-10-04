@@ -2,7 +2,6 @@ package com.example.eventpro.application.service;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -17,16 +16,17 @@ import com.example.eventpro.domain.entities.Usuario;
 import com.example.eventpro.domain.repository.EventoRepository;
 import com.example.eventpro.repository.UsuarioRepository;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class EventoService {
 
     private static final String MENSAGEM_ORGANIZADOR_NAO_E_DONO_DO_EVENTO = "Apenas o organizador que criou o evento pode gerencia-lo!";
 
-    @Autowired
-    private EventoRepository eventoRepository;
+    private final EventoRepository eventoRepository;
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
+    private final UsuarioRepository usuarioRepository;
 
     public List<EventoResponse> listarTodosOsEventos() {
 
