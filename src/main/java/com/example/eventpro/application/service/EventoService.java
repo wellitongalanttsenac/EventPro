@@ -14,7 +14,7 @@ import com.example.eventpro.domain.entities.EnumStatusEvento;
 import com.example.eventpro.domain.entities.Evento;
 import com.example.eventpro.domain.entities.Usuario;
 import com.example.eventpro.domain.repository.EventoRepository;
-import com.example.eventpro.repository.UsuarioRepository;
+import com.example.eventpro.domain.repository.UsuarioRepository;
 
 import lombok.RequiredArgsConstructor;
 

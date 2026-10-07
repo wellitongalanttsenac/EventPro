@@ -2,15 +2,16 @@ package com.example.eventpro.application.service;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.server.ResponseStatusException;
+
 import com.example.eventpro.application.DTOs.usuario.AtualizarStatusUsuarioRequest;
 import com.example.eventpro.application.DTOs.usuario.AtualizarUsuarioRequestDTO;
 import com.example.eventpro.application.DTOs.usuario.CriarUsuarioRequestDTO;
 import com.example.eventpro.application.DTOs.usuario.UsuarioResponse;
+import com.example.eventpro.application.ports.PasswordEncoderPort;
 import com.example.eventpro.domain.entities.EnumStatus;
 import com.example.eventpro.domain.entities.Usuario;
-import com.example.eventpro.repository.UsuarioRepository;
+import com.example.eventpro.domain.repository.UsuarioRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,6 +25,8 @@ public class UsuarioService {
     // Removemos o @Autowired e adicionamos um final para que ele seja atribuido apenas na instacia e nao possa ser reatribuido
     private final UsuarioRepository usuarioRepository;
 
+    private final PasswordEncoderPort passwordEncoder;
+
     public List<UsuarioResponse> listarTodosOsUsuarioParaGrid() {
 
         return usuarioRepository.findAll()
@@ -32,7 +35,7 @@ public class UsuarioService {
         .toList();
     }
 
-    public UsuarioResponse buscarUsuarioPorId(@PathVariable Long id) {
+    public UsuarioResponse buscarUsuarioPorId(Long id) {
 
         // Procura um usuario pelo id e caso nao encontre ele lanca uma exception
         // Não precisa fazer if e fica mais limpo e direto
@@ -49,7 +52,7 @@ public class UsuarioService {
         usuario.setNome(usuarioRequest.nome());
         usuario.setCpf(usuarioRequest.cpf());
         usuario.setEmail(usuarioRequest.email());
-        usuario.setSenha(usuarioRequest.senha());
+        usuario.setSenha(passwordEncoder.encode(usuarioRequest.senha()));
         usuario.setStatus(EnumStatus.ATIVO);
 
         // Para o save, nao conseguimos utilizar o .map pois ele retorna um a entidade direta
@@ -80,7 +83,7 @@ public class UsuarioService {
         usuarioBanco.setNome(usuarioRequest.nome());
         usuarioBanco.setEmail(usuarioRequest.email());
         usuarioBanco.setCpf(usuarioRequest.cpf());
-        usuarioBanco.setSenha(usuarioRequest.senha());
+        // usuarioBanco.setSenha(passwordEncoder.verifyPassword(usuarioRequest.senha(), usuarioBanco.getSenha()) ? usuarioBanco.getSenha() : passwordEncoder.encode(usuarioRequest.senha()));
         usuarioRepository.save(usuarioBanco);
 
         return new UsuarioResponse(usuarioBanco);
@@ -98,5 +101,19 @@ public class UsuarioService {
 
         return;
     }
+
+    public void TrocarSenhaUsuarioPassandoAtual(Long id, CharSequence senhaAtual){
+
+        Usuario usuarioBanco = usuarioRepository
+        .findById(id)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario nao encontrado na base"));
+
+        if (!passwordEncoder.verifyPassword(senhaAtual, usuarioBanco.getSenha())){
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Senha invalida!");
+        }
+
+    }
+
+    
 
 }

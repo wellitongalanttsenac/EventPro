@@ -1,4 +1,4 @@
-package com.example.eventpro.repository;
+package com.example.eventpro.domain.repository;
 
 
 import org.springframework.data.jpa.repository.JpaRepository;

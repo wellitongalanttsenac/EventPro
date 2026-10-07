@@ -53,7 +53,7 @@ public class UsuarioController {
     public ResponseEntity<Void> atualizarStatus(@PathVariable Long id, @RequestBody AtualizarStatusUsuarioRequest statusRequest) {
 
         usuarioService.atualizarStatusUsuario(id, statusRequest);
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.ok().build();
     }
 
     @PutMapping("/{id}")

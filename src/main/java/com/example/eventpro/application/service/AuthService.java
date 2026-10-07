@@ -11,7 +11,8 @@ import com.example.eventpro.application.DTOs.usuario.EsqueciSenhaRequest;
 import com.example.eventpro.application.DTOs.usuario.EsqueciSenhaResponse;
 import com.example.eventpro.application.DTOs.usuario.RedefinirSenhaRequest;
 import com.example.eventpro.domain.entities.Usuario;
-import com.example.eventpro.repository.UsuarioRepository;
+import com.example.eventpro.domain.exception.InvalidCredentialsException;
+import com.example.eventpro.domain.repository.UsuarioRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,7 +29,7 @@ public class AuthService {
         boolean credenciaisValidas = usuarioRepository.existsUsuarioByEmailAndSenha(loginRequest.email(), loginRequest.senha());
 
         if (!credenciaisValidas) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario ou senha invalidos!");
+            throw new InvalidCredentialsException("Usuario ou senha invalidos!");
         }
 
         var tokenAutenticacao = tokenService.geraToken(loginRequest.email());
