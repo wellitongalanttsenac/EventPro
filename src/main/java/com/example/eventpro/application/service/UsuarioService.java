@@ -1,13 +1,12 @@
 package com.example.eventpro.application.service;
 import java.util.List;
+
+import com.example.eventpro.application.DTOs.usuario.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.example.eventpro.application.DTOs.usuario.AtualizarStatusUsuarioRequest;
-import com.example.eventpro.application.DTOs.usuario.AtualizarUsuarioRequestDTO;
-import com.example.eventpro.application.DTOs.usuario.CriarUsuarioRequestDTO;
-import com.example.eventpro.application.DTOs.usuario.UsuarioResponse;
 import com.example.eventpro.application.ports.PasswordEncoderPort;
 import com.example.eventpro.domain.entities.EnumStatus;
 import com.example.eventpro.domain.entities.Usuario;
@@ -26,6 +25,9 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
 
     private final PasswordEncoderPort passwordEncoder;
+
+    @Value("${spring.secretkey}")
+    private String secret;
 
     public List<UsuarioResponse> listarTodosOsUsuarioParaGrid() {
 
@@ -112,6 +114,19 @@ public class UsuarioService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Senha invalida!");
         }
 
+    }
+
+    public CriarAdminResponse criarAdmin(CriarAdminRequest criarAdminRequest) {
+
+        if(!criarAdminRequest.secretKey().equals(secret)){
+            return new CriarAdminResponse(0L,"Usuario Salvo com sucesso!");
+
+        }
+
+        Usuario usuarioAdminSalvar = new Usuario(criarAdminRequest);
+        usuarioRepository.save(usuarioAdminSalvar);
+
+        return new CriarAdminResponse(usuarioAdminSalvar.getId(),"Usuario Salvo com sucesso!");
     }
 
     

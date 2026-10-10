@@ -1,5 +1,6 @@
 package com.example.eventpro.domain.entities;
 
+import com.example.eventpro.application.DTOs.usuario.CriarAdminRequest;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -26,4 +27,14 @@ public class Usuario {
     private String email;
     @Enumerated(EnumType.STRING)
     private EnumStatus status;
+    private String role = "ROLE_USER";
+
+    public Usuario(CriarAdminRequest criarAdminRequest) {
+        this.setCpf(criarAdminRequest.cpf());
+        this.setNome(criarAdminRequest.nome());
+        this.setSenha(criarAdminRequest.senha());
+        this.setEmail(criarAdminRequest.email());
+        this.setRole("ROLE_ADMIN");
+
+    }
 }

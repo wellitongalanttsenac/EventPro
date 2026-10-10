@@ -1,9 +1,6 @@
 package com.example.eventpro.presentation;
 
-import com.example.eventpro.application.DTOs.usuario.AtualizarStatusUsuarioRequest;
-import com.example.eventpro.application.DTOs.usuario.AtualizarUsuarioRequestDTO;
-import com.example.eventpro.application.DTOs.usuario.CriarUsuarioRequestDTO;
-import com.example.eventpro.application.DTOs.usuario.UsuarioResponse;
+import com.example.eventpro.application.DTOs.usuario.*;
 import com.example.eventpro.application.service.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,6 +17,19 @@ public class UsuarioController {
 
     @Autowired
     private UsuarioService usuarioService;
+
+    @PostMapping("/admin")
+    public ResponseEntity<CriarAdminResponse> criarAdmin(@RequestBody CriarAdminRequest criarAdminRequest){
+
+        try{
+            CriarAdminResponse respostaSalvar = usuarioService.criarAdmin(criarAdminRequest);
+            return ResponseEntity.ok(respostaSalvar);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+
+    }
 
     @GetMapping
     @Operation(summary = "Método de consulta de lista de organizadores", description = "Método responsável pela consulta de todos os organizadores sem filtros")
