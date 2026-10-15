@@ -11,14 +11,14 @@ import java.io.IOException;
 
 public class MenuController {
 
+
     @FXML
     public void abrirCadastro(ActionEvent event) throws IOException {
-
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/back/cadastrarUsuario-view.fxml"));
+        FXMLLoader loader =
+                new FXMLLoader(getClass().getResource("/com/example/back/cadastro-usuario-view.fxml"));
 
         Scene scene = new Scene(loader.load());
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-
         stage.setScene(scene);
 
     }
@@ -27,4 +27,5 @@ public class MenuController {
     public void sair(){
         System.exit(0);
     }
+
 }

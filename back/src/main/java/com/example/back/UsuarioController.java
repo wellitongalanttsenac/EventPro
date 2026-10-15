@@ -10,12 +10,15 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 
-public class CadastrarUsuarioController {
+public class UsuarioController {
 
     @FXML
     private TextField txtNome;
@@ -30,35 +33,9 @@ public class CadastrarUsuarioController {
     private PasswordField txtSenha;
 
     @FXML
-    protected void onSalvarButtonClick(ActionEvent event) throws IOException {
-        if (!txtNome.getText().isEmpty() && !txtCpf.getText().isEmpty() && !txtEmail.getText().isEmpty() && !txtSenha.getText().isEmpty()) {
-            showMessage(Alert.AlertType.INFORMATION, "Usuário foi salvo com sucesso!");
-
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/back/menu-view.fxml"));
-
-            Scene scene = new Scene(loader.load());
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-
-            stage.setScene(scene);
-        } else {
-            showMessage(Alert.AlertType.ERROR, "Erro ao salvar usuário!");
-        }
-    }
-
-    private void showMessage(Alert.AlertType type, String msg) {
-        Alert alerta = new Alert(type);
-
-        alerta.setTitle("Mensagem do sistema.");
-        alerta.setHeaderText(null);
-        alerta.setContentText(msg);
-
-        alerta.showAndWait();
-    }
+    public void salvarUsuario(ActionEvent event) throws Exception {
 
 
-    // Metodo para salvar usuario
-    @FXML
-    public void salvar(ActionEvent event) throws Exception {
         //Validar Dados
 
         String jsonRequest = String.format("{\n" +
@@ -72,37 +49,36 @@ public class CadastrarUsuarioController {
                 txtSenha.getText(),
                 txtCpf.getText(),
                 "sakjbhaskjcdhaiubshLKVAShfbdw68asd65d");
+
         int respostaApi = executaMetodoAPI("http://localhost:8080/usuarios/admin",jsonRequest,"POST");
 
 
-        if(respostaApi ==200){
-            showMessage(Alert.AlertType.INFORMATION,"Usuario salv com sucesso!");
-            voltarParaMenu(event);
+    if(respostaApi ==200){
+        showMessage(Alert.AlertType.INFORMATION,"Usuario salv com sucesso!");
+        voltar(event);
 
-        }else {
-            showMessage(Alert.AlertType.ERROR,"Erro ao salvar usuário!");
-        }
-
-        voltarParaMenu(event);
+    }else {
+        showMessage(Alert.AlertType.ERROR,"Erro ao salvar usuário!");
     }
+
+
+
+
+
+    }
+
 
     @FXML
-    public void sair(ActionEvent event) throws IOException {
-        voltarParaMenu(event);
-    }
-
-
-    private void voltarParaMenu(ActionEvent event) throws IOException {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/back/menu-view.fxml"));
+    public void voltar(ActionEvent event) throws IOException {
+        FXMLLoader loader =
+                new FXMLLoader(getClass().getResource("/com/example/back/menu-view.fxml"));
 
         Scene scene = new Scene(loader.load());
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-
         stage.setScene(scene);
+
     }
 
-
-    //Metodo para exeutar a api passando a url json e protocolo HTTp
     private int executaMetodoAPI(String url,String json,String protocoloHttp)
             throws Exception {
 
@@ -133,5 +109,19 @@ public class CadastrarUsuarioController {
 
         return connection.getResponseCode();
 
+
+
+
+
+
+
     }
+    private void showMessage(Alert.AlertType type, String msg){
+        Alert alerta =new Alert(type);
+        alerta.setTitle("Mensagem do Sistema!");
+        alerta.setHeaderText(null);
+        alerta.setContentText(msg);
+        alerta.showAndWait();
+    }
+
 }

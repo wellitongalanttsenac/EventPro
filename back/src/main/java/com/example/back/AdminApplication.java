@@ -12,7 +12,7 @@ public class AdminApplication extends Application {
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(AdminApplication.class.getResource("login-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load(), 320, 240);
-        stage.setTitle("Admin E-commerce");
+        stage.setTitle("Admin Alunao!");
         stage.setScene(scene);
         stage.show();
     }

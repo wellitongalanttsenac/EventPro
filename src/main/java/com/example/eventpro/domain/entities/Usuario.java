@@ -35,6 +35,6 @@ public class Usuario {
         this.setSenha(criarAdminRequest.senha());
         this.setEmail(criarAdminRequest.email());
         this.setRole("ROLE_ADMIN");
-
+        this.setStatus(EnumStatus.ATIVO);
     }
 }
