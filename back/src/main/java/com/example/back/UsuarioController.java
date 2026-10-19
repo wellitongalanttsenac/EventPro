@@ -12,11 +12,14 @@ import javafx.stage.Stage;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 public class UsuarioController {
 
@@ -35,35 +38,35 @@ public class UsuarioController {
     @FXML
     public void salvarUsuario(ActionEvent event) throws Exception {
 
+        //Validar Dados antes de chamar a API
+        List<String> erros = CadastroAdmin.validar(txtNome.getText(), txtCpf.getText(), txtEmail.getText(), txtSenha.getText());
 
-        //Validar Dados
+        if(!erros.isEmpty()){
+            showMessage(Alert.AlertType.WARNING, String.join("\n", erros));
+            return;
+        }
 
-        String jsonRequest = String.format("{\n" +
-                        "  \"nome\": \"%s\",\n" +
-                        "  \"email\": \"%s\",\n" +
-                        "  \"senha\": \"%s\",\n" +
-                        "  \"cpf\": \"%s\",\n" +
-                        "  \"secretKey\": \"%s\"\n" +
-                        "}", txtNome.getText(),
-                txtEmail.getText(),
+        String jsonRequest = CadastroAdmin.montarJson(txtNome.getText().trim(),
+                txtCpf.getText().trim(),
+                txtEmail.getText().trim(),
                 txtSenha.getText(),
-                txtCpf.getText(),
                 "sakjbhaskjcdhaiubshLKVAShfbdw68asd65d");
 
-        int respostaApi = executaMetodoAPI("http://localhost:8080/usuarios/admin",jsonRequest,"POST");
+        RespostaApi respostaApi;
+        try {
+            respostaApi = executaMetodoAPI("http://localhost:8080/usuarios/admin",jsonRequest,"POST");
+        } catch (IOException e) {
+            showMessage(Alert.AlertType.ERROR,"Não foi possível conectar à API em localhost:8080. Verifique se o back end está rodando.");
+            return;
+        }
 
+        if(respostaApi.status() == 200){
+            showMessage(Alert.AlertType.INFORMATION,"Usuario salvo com sucesso!");
+            voltar(event);
 
-    if(respostaApi ==200){
-        showMessage(Alert.AlertType.INFORMATION,"Usuario salv com sucesso!");
-        voltar(event);
-
-    }else {
-        showMessage(Alert.AlertType.ERROR,"Erro ao salvar usuário!");
-    }
-
-
-
-
+        }else {
+            showMessage(Alert.AlertType.ERROR, CadastroAdmin.mensagemDeErro(respostaApi.status(), respostaApi.corpo()));
+        }
 
     }
 
@@ -79,11 +82,15 @@ public class UsuarioController {
 
     }
 
-    private int executaMetodoAPI(String url,String json,String protocoloHttp)
-            throws Exception {
+    // Status HTTP e corpo da resposta, o corpo traz a mensagem de erro da API (ErroResponse)
+    private record RespostaApi(int status, String corpo) {
+    }
+
+    private RespostaApi executaMetodoAPI(String url,String json,String protocoloHttp)
+            throws IOException {
 
 
-        URL urlAPI = new URL(url);
+        URL urlAPI = URI.create(url).toURL();
         HttpURLConnection connection = (HttpURLConnection) urlAPI.openConnection();
         connection.setRequestMethod(protocoloHttp);
         connection.setDoOutput(true);
@@ -93,27 +100,27 @@ public class UsuarioController {
             connection.setRequestProperty("Content-Type","application/json");
 
             try (OutputStream os = connection.getOutputStream()){
-                os.write(json.getBytes());
+                os.write(json.getBytes(StandardCharsets.UTF_8));
             }
 
         }
 
-//        var  br = new BufferedReader(new InputStreamReader((connection.getInputStream())));
-//       var sb = new StringBuilder();
-//        String output;
-//        while ((output = br.readLine()) != null) {
-//            sb.append(output);
-//        }
-//
-//        var retornoBody = sb.toString();
+        int status = connection.getResponseCode();
 
-        return connection.getResponseCode();
+        // Em erro (4xx/5xx) o corpo vem no errorStream
+        InputStream corpo = status >= 400 ? connection.getErrorStream() : connection.getInputStream();
+        if(corpo == null){
+            return new RespostaApi(status, "");
+        }
 
-
-
-
-
-
+        try (var br = new BufferedReader(new InputStreamReader(corpo, StandardCharsets.UTF_8))) {
+            var sb = new StringBuilder();
+            String output;
+            while ((output = br.readLine()) != null) {
+                sb.append(output);
+            }
+            return new RespostaApi(status, sb.toString());
+        }
 
     }
     private void showMessage(Alert.AlertType type, String msg){
