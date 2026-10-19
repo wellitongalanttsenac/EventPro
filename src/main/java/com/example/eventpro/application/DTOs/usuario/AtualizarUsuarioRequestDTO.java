@@ -9,7 +9,7 @@ public record AtualizarUsuarioRequestDTO(String nome, String cpf, String email, 
     public AtualizarUsuarioRequestDTO(Usuario entidadeUsuario){
         this(
             entidadeUsuario.getNome(),
-            entidadeUsuario.getCpf(),
+            entidadeUsuario.getCpf() == null ? null : entidadeUsuario.getCpf().toString(),
             entidadeUsuario.getEmail(),
             entidadeUsuario.getStatus()
         );

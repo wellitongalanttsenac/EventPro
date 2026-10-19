@@ -15,12 +15,13 @@ import java.time.ZoneOffset;
 @Service
 public class TokenService {
 
-    @Value("${spring.secret}")
+    @Value("${spring.secretkey}")
     private String secret;
-    @Value("${spring.expiration}")
-    private Long expiration;
-    @Value("${spring.emissor}")
-    private String emissor;
+
+    @Value("${spring.tempo_expiracao}")
+    private Long tempo;
+
+    private String emissor = "EVENTPRO";
 
     public String geraToken(String subject){
         try{
@@ -57,7 +58,7 @@ public class TokenService {
         // Pegar data atual
         var dataAtual = LocalDateTime.now();
         // Aumanetar ou diminuir a data a partir da atual
-        var dataFuturo = dataAtual.plusMinutes(expiration);
+        var dataFuturo = dataAtual.plusMinutes(tempo);
 
         return dataFuturo.toInstant(ZoneOffset.of("-03:00"));
 

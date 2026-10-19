@@ -16,7 +16,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 // Regra de negócio central: o Organizador só gerencia Palestrantes dos Eventos que ele mesmo criou.
-// O eventoId só aparece na rota quando é necessário (listar e criar), nas demais o palestrante já identifica o evento.
+// O palestrante é um sub recurso do evento, por isso todas as rotas ficam em /eventos/{eventoId}/palestrantes (mesmo contrato usado pelo front).
+// O service confere se o palestrante realmente pertence ao evento informado na rota.
 @RestController
 @RequestMapping
 @Tag(name = "Palestrantes", description = "Grupo de API responsável pela criação e consulta dos Palestrantes de um Evento")
@@ -33,11 +34,11 @@ public class PalestranteController {
 
     }
 
-    @GetMapping("/palestrantes/{palestranteId}")
+    @GetMapping("/eventos/{eventoId}/palestrantes/{palestranteId}")
     @Operation(summary = "Método de consulta de palestrante por id", description = "Método responsável pela consulta de um palestrante por id")
-    public ResponseEntity<PalestranteResponse> buscarPorId(@PathVariable Long palestranteId) {
+    public ResponseEntity<PalestranteResponse> buscarPorId(@PathVariable Long eventoId, @PathVariable Long palestranteId) {
 
-        PalestranteResponse palestranteBanco = palestranteService.buscarPalestrantePorId(palestranteId);
+        PalestranteResponse palestranteBanco = palestranteService.buscarPalestrantePorId(eventoId, palestranteId);
 
         return ResponseEntity.ok(palestranteBanco);
     }
@@ -51,20 +52,20 @@ public class PalestranteController {
         return ResponseEntity.status(HttpStatus.CREATED).body(palestranteCriadoBanco);
     }
 
-    @PutMapping("/palestrantes/{palestranteId}")
+    @PutMapping("/eventos/{eventoId}/palestrantes/{palestranteId}")
     @Operation(summary = "Método de alterar informações do palestrante", description = "Método responsável pela alteração de palestrantes. Somente o organizador dono do evento pode alterar")
-    public ResponseEntity<PalestranteResponse> atualizarPalestrante(@PathVariable Long palestranteId, @RequestParam Long organizadorId, @RequestBody AtualizarPalestranteRequest palestranteRequest) {
+    public ResponseEntity<PalestranteResponse> atualizarPalestrante(@PathVariable Long eventoId, @PathVariable Long palestranteId, @RequestParam Long organizadorId, @RequestBody AtualizarPalestranteRequest palestranteRequest) {
 
-        PalestranteResponse palestranteAlteradoBanco = palestranteService.atualizarPalestrante(palestranteId, organizadorId, palestranteRequest);
+        PalestranteResponse palestranteAlteradoBanco = palestranteService.atualizarPalestrante(eventoId, palestranteId, organizadorId, palestranteRequest);
 
         return ResponseEntity.ok(palestranteAlteradoBanco);
     }
 
-    @DeleteMapping("/palestrantes/{palestranteId}/excluir")
+    @DeleteMapping("/eventos/{eventoId}/palestrantes/{palestranteId}/excluir")
     @Operation(summary = "Método de exclusão de palestrante", description = "Método responsável pela exclusão de um palestrante. Somente o organizador dono do evento pode excluir")
-    public ResponseEntity<Void> excluir(@PathVariable Long palestranteId, @RequestParam Long organizadorId) {
+    public ResponseEntity<Void> excluir(@PathVariable Long eventoId, @PathVariable Long palestranteId, @RequestParam Long organizadorId) {
 
-        palestranteService.excluirPalestrantePorId(palestranteId, organizadorId);
+        palestranteService.excluirPalestrantePorId(eventoId, palestranteId, organizadorId);
 
         return ResponseEntity.ok().build();
     }

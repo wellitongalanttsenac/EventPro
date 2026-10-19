@@ -39,8 +39,7 @@ class AuthServiceTest {
 
         tokenService = new TokenService();
         ReflectionTestUtils.setField(tokenService, "secret", "chave-de-teste");
-        ReflectionTestUtils.setField(tokenService, "expiration", 5L);
-        ReflectionTestUtils.setField(tokenService, "emissor", "eventpro-teste");
+        ReflectionTestUtils.setField(tokenService, "tempo", 5L);
 
         authService = new AuthService(tokenService, usuarioRepository, passwordEncoder);
     }

@@ -28,10 +28,11 @@ public class JwtFilter extends OncePerRequestFilter {
         if(uri.startsWith("/swagger-ui")
         || uri.startsWith("/v2/api-docs")
         || uri.startsWith("/v3/api-docs")
-        || uri.startsWith("/swagge-resoucers")
+        || uri.startsWith("/swagger-resources")
         || uri.startsWith("/webjars")
+        // Igual a referencia: todas as rotas liberadas por enquanto.
+        // O login do front chama GET /usuarios antes de salvar o token, entao exigir JWT aqui quebraria o login
         || uri.startsWith("/")
-        // || uri.startsWith("/auth")
         ){
             filterChain.doFilter(request, response);
             return;

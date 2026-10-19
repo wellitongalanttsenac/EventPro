@@ -9,7 +9,7 @@ public record CriarUsuarioRequestDTO(String nome, String senha, String cpf, Stri
         this(
             entidadeUsuario.getNome(),
             entidadeUsuario.getSenha(),
-            entidadeUsuario.getCpf(),
+            entidadeUsuario.getCpf() == null ? null : entidadeUsuario.getCpf().toString(),
             entidadeUsuario.getEmail()
         );
     }

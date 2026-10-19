@@ -12,6 +12,7 @@ import com.example.eventpro.domain.entities.EnumStatus;
 import com.example.eventpro.domain.entities.Usuario;
 import com.example.eventpro.domain.exception.ChaveAdminInvalidaException;
 import com.example.eventpro.domain.repository.UsuarioRepository;
+import com.example.eventpro.domain.valueobject.CPF;
 
 import lombok.RequiredArgsConstructor;
 
@@ -51,12 +52,7 @@ public class UsuarioService {
 
     public UsuarioResponse criarUsuario(CriarUsuarioRequestDTO usuarioRequest) {
 
-        Usuario usuario = new Usuario();
-        usuario.setNome(usuarioRequest.nome());
-        usuario.setCpf(usuarioRequest.cpf());
-        usuario.setEmail(usuarioRequest.email());
-        usuario.setSenha(passwordEncoder.encode(usuarioRequest.senha()));
-        usuario.setStatus(EnumStatus.ATIVO);
+        Usuario usuario = new Usuario(usuarioRequest, passwordEncoder.encode(usuarioRequest.senha()));
 
         // Para o save, nao conseguimos utilizar o .map pois ele retorna um a entidade direta
         var usuarioBanco = usuarioRepository.save(usuario);
@@ -85,7 +81,7 @@ public class UsuarioService {
         usuarioBanco.setStatus(usuarioRequest.status());
         usuarioBanco.setNome(usuarioRequest.nome());
         usuarioBanco.setEmail(usuarioRequest.email());
-        usuarioBanco.setCpf(usuarioRequest.cpf());
+        usuarioBanco.setCpf(new CPF(usuarioRequest.cpf()));
         // usuarioBanco.setSenha(passwordEncoder.verifyPassword(usuarioRequest.senha(), usuarioBanco.getSenha()) ? usuarioBanco.getSenha() : passwordEncoder.encode(usuarioRequest.senha()));
         usuarioRepository.save(usuarioBanco);
 
@@ -124,8 +120,7 @@ public class UsuarioService {
             throw new ChaveAdminInvalidaException("Chave de criacao de admin invalida!");
         }
 
-        Usuario usuarioAdminSalvar = new Usuario(criarAdminRequest);
-        usuarioAdminSalvar.setSenha(passwordEncoder.encode(criarAdminRequest.senha()));
+        Usuario usuarioAdminSalvar = new Usuario(criarAdminRequest, passwordEncoder.encode(criarAdminRequest.senha()));
         usuarioRepository.save(usuarioAdminSalvar);
 
         return new CriarAdminResponse(usuarioAdminSalvar.getId(),"Usuario Salvo com sucesso!");

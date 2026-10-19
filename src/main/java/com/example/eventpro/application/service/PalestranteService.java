@@ -36,9 +36,9 @@ public class PalestranteService {
         .toList();
     }
 
-    public PalestranteResponse buscarPalestrantePorId(Long palestranteId) {
+    public PalestranteResponse buscarPalestrantePorId(Long eventoId, Long palestranteId) {
 
-        return new PalestranteResponse(buscarPalestranteEntidadePorId(palestranteId));
+        return new PalestranteResponse(buscarPalestranteDoEvento(eventoId, palestranteId));
     }
 
     public PalestranteResponse criarPalestrante(Long eventoId, Long organizadorId, CriarPalestranteRequest palestranteRequest) {
@@ -56,9 +56,9 @@ public class PalestranteService {
         return new PalestranteResponse(palestranteBanco);
     }
 
-    public PalestranteResponse atualizarPalestrante(Long palestranteId, Long organizadorId, AtualizarPalestranteRequest palestranteRequest) {
+    public PalestranteResponse atualizarPalestrante(Long eventoId, Long palestranteId, Long organizadorId, AtualizarPalestranteRequest palestranteRequest) {
 
-        Palestrante palestranteBanco = buscarPalestranteGerenciavelPeloOrganizador(palestranteId, organizadorId);
+        Palestrante palestranteBanco = buscarPalestranteGerenciavelPeloOrganizador(eventoId, palestranteId, organizadorId);
 
         palestranteBanco.setNome(palestranteRequest.nome());
         palestranteBanco.setCpf(palestranteRequest.cpf());
@@ -68,9 +68,9 @@ public class PalestranteService {
         return new PalestranteResponse(palestranteBanco);
     }
 
-    public void excluirPalestrantePorId(Long palestranteId, Long organizadorId) {
+    public void excluirPalestrantePorId(Long eventoId, Long palestranteId, Long organizadorId) {
 
-        Palestrante palestranteBanco = buscarPalestranteGerenciavelPeloOrganizador(palestranteId, organizadorId);
+        Palestrante palestranteBanco = buscarPalestranteGerenciavelPeloOrganizador(eventoId, palestranteId, organizadorId);
 
         palestranteRepository.delete(palestranteBanco);
     }
@@ -83,14 +83,24 @@ public class PalestranteService {
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Palestrante nao encontrado na base"));
     }
 
-    // O evento e descoberto pelo proprio palestrante, por isso a rota nao precisa do eventoId
-    private Palestrante buscarPalestranteGerenciavelPeloOrganizador(Long palestranteId, Long organizadorId) {
+    // A rota e /eventos/{eventoId}/palestrantes/{palestranteId}, entao o palestrante precisa ser daquele evento
+    private Palestrante buscarPalestranteDoEvento(Long eventoId, Long palestranteId) {
 
         Palestrante palestranteBanco = buscarPalestranteEntidadePorId(palestranteId);
 
-        if (palestranteBanco.getEvento() == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Palestrante nao esta vinculado a nenhum evento");
+        boolean pertenceAoEvento = palestranteBanco.getEvento() != null
+        && palestranteBanco.getEvento().getId().equals(eventoId);
+
+        if (!pertenceAoEvento) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Palestrante nao encontrado neste evento");
         }
+
+        return palestranteBanco;
+    }
+
+    private Palestrante buscarPalestranteGerenciavelPeloOrganizador(Long eventoId, Long palestranteId, Long organizadorId) {
+
+        Palestrante palestranteBanco = buscarPalestranteDoEvento(eventoId, palestranteId);
 
         eventoService.validarOrganizadorEhDonoDoEvento(palestranteBanco.getEvento(), organizadorId, MENSAGEM_ORGANIZADOR_NAO_E_DONO_DO_EVENTO);
 

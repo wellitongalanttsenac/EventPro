@@ -16,9 +16,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 // Regra de negócio central: o Organizador só gerencia as Inscrições dos Eventos que ele mesmo criou.
-// O eventoId só aparece na rota quando é necessário (listar e criar), nas demais a inscrição já identifica o evento.
-// Existem duas formas de nomear es estruturar a rota, por subrecursos/hieranquia da api, a inscrição é um sub recurso do evento, logo (evento/incrição...)
-// Ou o raso, onde so sera utilizado o pai quando necessario.
+// A inscrição é um sub recurso do evento, por isso todas as rotas ficam em /eventos/{eventoId}/inscricoes (mesmo contrato usado pelo front).
+// O service confere se a inscrição realmente pertence ao evento informado na rota.
 @RestController
 @RequestMapping
 @Tag(name = "Inscrições", description = "Grupo de API responsável pela inscrição de participantes em Eventos e geração da credencial de confirmação")
@@ -35,11 +34,11 @@ public class InscricaoController {
 
     }
 
-    @GetMapping("/inscricoes/{inscricaoId}")
+    @GetMapping("/eventos/{eventoId}/inscricoes/{inscricaoId}")
     @Operation(summary = "Método de consulta de inscrição por id", description = "Método responsável pela consulta de uma inscrição, incluindo a credencial gerada quando confirmada")
-    public ResponseEntity<InscricaoResponse> buscarPorId(@PathVariable Long inscricaoId) {
+    public ResponseEntity<InscricaoResponse> buscarPorId(@PathVariable Long eventoId, @PathVariable Long inscricaoId) {
 
-        InscricaoResponse inscricaoBanco = inscricaoService.buscarInscricaoPorId(inscricaoId);
+        InscricaoResponse inscricaoBanco = inscricaoService.buscarInscricaoPorId(eventoId, inscricaoId);
 
         return ResponseEntity.ok(inscricaoBanco);
     }
@@ -53,20 +52,20 @@ public class InscricaoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(inscricaoCriadaBanco);
     }
 
-    @PatchMapping("/inscricoes/{inscricaoId}/status")
+    @PatchMapping("/eventos/{eventoId}/inscricoes/{inscricaoId}/status")
     @Operation(summary = "Método de alterar status da inscrição", description = "Método responsável por confirmar ou cancelar uma inscrição. Somente o organizador dono do evento pode alterar. Ao confirmar, uma credencial única é gerada")
-    public ResponseEntity<InscricaoResponse> atualizarStatus(@PathVariable Long inscricaoId, @RequestParam Long organizadorId, @RequestBody AtualizarStatusInscricaoRequest statusRequest) {
+    public ResponseEntity<InscricaoResponse> atualizarStatus(@PathVariable Long eventoId, @PathVariable Long inscricaoId, @RequestParam Long organizadorId, @RequestBody AtualizarStatusInscricaoRequest statusRequest) {
 
-        InscricaoResponse inscricaoAlteradaBanco = inscricaoService.atualizarStatusInscricao(inscricaoId, organizadorId, statusRequest);
+        InscricaoResponse inscricaoAlteradaBanco = inscricaoService.atualizarStatusInscricao(eventoId, inscricaoId, organizadorId, statusRequest);
 
         return ResponseEntity.ok(inscricaoAlteradaBanco);
     }
 
-    @DeleteMapping("/inscricoes/{inscricaoId}/excluir")
+    @DeleteMapping("/eventos/{eventoId}/inscricoes/{inscricaoId}/excluir")
     @Operation(summary = "Método de cancelamento de inscrição", description = "Método responsável pelo cancelamento de uma inscrição. Somente o organizador dono do evento pode cancelar")
-    public ResponseEntity<Void> cancelar(@PathVariable Long inscricaoId, @RequestParam Long organizadorId) {
+    public ResponseEntity<Void> cancelar(@PathVariable Long eventoId, @PathVariable Long inscricaoId, @RequestParam Long organizadorId) {
 
-        inscricaoService.cancelarInscricaoPorId(inscricaoId, organizadorId);
+        inscricaoService.cancelarInscricaoPorId(eventoId, inscricaoId, organizadorId);
 
         return ResponseEntity.ok().build();
     }

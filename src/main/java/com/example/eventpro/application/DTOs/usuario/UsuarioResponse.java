@@ -10,7 +10,7 @@ public record UsuarioResponse(Long id, String nome, String cpf, String email, En
         this(
             entidadeUsuario.getId(),
             entidadeUsuario.getNome(),
-            entidadeUsuario.getCpf(),
+            entidadeUsuario.getCpf() == null ? null : entidadeUsuario.getCpf().toString(),
             entidadeUsuario.getEmail(),
             entidadeUsuario.getStatus()
         );

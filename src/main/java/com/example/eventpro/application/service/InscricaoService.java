@@ -42,9 +42,9 @@ public class InscricaoService {
         .toList();
     }
 
-    public InscricaoResponse buscarInscricaoPorId(Long inscricaoId) {
+    public InscricaoResponse buscarInscricaoPorId(Long eventoId, Long inscricaoId) {
 
-        return new InscricaoResponse(buscarInscricaoEntidadePorId(inscricaoId));
+        return new InscricaoResponse(buscarInscricaoDoEvento(eventoId, inscricaoId));
     }
 
     public InscricaoResponse criarInscricao(Long eventoId, CriarInscricaoRequest inscricaoRequest) {
@@ -62,9 +62,9 @@ public class InscricaoService {
         return new InscricaoResponse(inscricaoBanco);
     }
 
-    public InscricaoResponse atualizarStatusInscricao(Long inscricaoId, Long organizadorId, AtualizarStatusInscricaoRequest statusRequest) {
+    public InscricaoResponse atualizarStatusInscricao(Long eventoId, Long inscricaoId, Long organizadorId, AtualizarStatusInscricaoRequest statusRequest) {
 
-        Inscricao inscricaoBanco = buscarInscricaoGerenciavelPeloOrganizador(inscricaoId, organizadorId);
+        Inscricao inscricaoBanco = buscarInscricaoGerenciavelPeloOrganizador(eventoId, inscricaoId, organizadorId);
 
         inscricaoBanco.setStatus(statusRequest.status());
 
@@ -81,9 +81,9 @@ public class InscricaoService {
         return new InscricaoResponse(inscricaoBanco);
     }
 
-    public void cancelarInscricaoPorId(Long inscricaoId, Long organizadorId) {
+    public void cancelarInscricaoPorId(Long eventoId, Long inscricaoId, Long organizadorId) {
 
-        Inscricao inscricaoBanco = buscarInscricaoGerenciavelPeloOrganizador(inscricaoId, organizadorId);
+        Inscricao inscricaoBanco = buscarInscricaoGerenciavelPeloOrganizador(eventoId, inscricaoId, organizadorId);
 
         inscricaoBanco.setStatus(EnumStatusInscricao.CANCELADA);
         inscricaoRepository.save(inscricaoBanco);
@@ -96,14 +96,24 @@ public class InscricaoService {
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inscricao nao encontrada na base"));
     }
 
-    // O evento e descoberto pela propria inscricao, por isso a rota nao precisa do eventoId
-    private Inscricao buscarInscricaoGerenciavelPeloOrganizador(Long inscricaoId, Long organizadorId) {
+    // A rota e /eventos/{eventoId}/inscricoes/{inscricaoId}, entao a inscricao precisa ser daquele evento
+    private Inscricao buscarInscricaoDoEvento(Long eventoId, Long inscricaoId) {
 
         Inscricao inscricaoBanco = buscarInscricaoEntidadePorId(inscricaoId);
 
-        if (inscricaoBanco.getEvento() == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Inscricao nao esta vinculada a nenhum evento");
+        boolean pertenceAoEvento = inscricaoBanco.getEvento() != null
+        && inscricaoBanco.getEvento().getId().equals(eventoId);
+
+        if (!pertenceAoEvento) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Inscricao nao encontrada neste evento");
         }
+
+        return inscricaoBanco;
+    }
+
+    private Inscricao buscarInscricaoGerenciavelPeloOrganizador(Long eventoId, Long inscricaoId, Long organizadorId) {
+
+        Inscricao inscricaoBanco = buscarInscricaoDoEvento(eventoId, inscricaoId);
 
         eventoService.validarOrganizadorEhDonoDoEvento(inscricaoBanco.getEvento(), organizadorId, MENSAGEM_ORGANIZADOR_NAO_E_DONO_DO_EVENTO);
 
