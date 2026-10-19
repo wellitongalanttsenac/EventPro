@@ -35,7 +35,7 @@ public class InscricaoController {
 
     }
 
-    @GetMapping("inscricoes/{inscricaoId}")
+    @GetMapping("/inscricoes/{inscricaoId}")
     @Operation(summary = "Método de consulta de inscrição por id", description = "Método responsável pela consulta de uma inscrição, incluindo a credencial gerada quando confirmada")
     public ResponseEntity<InscricaoResponse> buscarPorId(@PathVariable Long inscricaoId) {
 
@@ -44,7 +44,7 @@ public class InscricaoController {
         return ResponseEntity.ok(inscricaoBanco);
     }
 
-    @PostMapping("/evento/{eventoId}/inscricoes")
+    @PostMapping("/eventos/{eventoId}/inscricoes")
     @Operation(summary = "Método de inscrição em um evento", description = "Método responsável por registrar a inscrição de um participante em um evento. A inscrição nasce com status PENDENTE")
     public ResponseEntity<InscricaoResponse> criar(@PathVariable Long eventoId, @RequestBody CriarInscricaoRequest inscricaoRequest) {
 
@@ -53,7 +53,7 @@ public class InscricaoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(inscricaoCriadaBanco);
     }
 
-    @PatchMapping("inscricoes/{inscricaoId}/status")
+    @PatchMapping("/inscricoes/{inscricaoId}/status")
     @Operation(summary = "Método de alterar status da inscrição", description = "Método responsável por confirmar ou cancelar uma inscrição. Somente o organizador dono do evento pode alterar. Ao confirmar, uma credencial única é gerada")
     public ResponseEntity<InscricaoResponse> atualizarStatus(@PathVariable Long inscricaoId, @RequestParam Long organizadorId, @RequestBody AtualizarStatusInscricaoRequest statusRequest) {
 
@@ -62,7 +62,7 @@ public class InscricaoController {
         return ResponseEntity.ok(inscricaoAlteradaBanco);
     }
 
-    @DeleteMapping("inscricoes/{inscricaoId}/excluir")
+    @DeleteMapping("/inscricoes/{inscricaoId}/excluir")
     @Operation(summary = "Método de cancelamento de inscrição", description = "Método responsável pelo cancelamento de uma inscrição. Somente o organizador dono do evento pode cancelar")
     public ResponseEntity<Void> cancelar(@PathVariable Long inscricaoId, @RequestParam Long organizadorId) {
 

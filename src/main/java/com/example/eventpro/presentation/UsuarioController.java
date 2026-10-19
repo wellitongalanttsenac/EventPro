@@ -19,15 +19,12 @@ public class UsuarioController {
     private UsuarioService usuarioService;
 
     @PostMapping("/admin")
+    @Operation(summary = "Método para criação de admin", description = "Método usado pelo desktop para criar um admin. Exige a secretKey configurada na API")
     public ResponseEntity<CriarAdminResponse> criarAdmin(@RequestBody CriarAdminRequest criarAdminRequest){
 
-        try{
-            CriarAdminResponse respostaSalvar = usuarioService.criarAdmin(criarAdminRequest);
-            return ResponseEntity.ok(respostaSalvar);
-
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        // Chave invalida vira 403 no GlobalExceptionHandler
+        CriarAdminResponse respostaSalvar = usuarioService.criarAdmin(criarAdminRequest);
+        return ResponseEntity.ok(respostaSalvar);
 
     }
 

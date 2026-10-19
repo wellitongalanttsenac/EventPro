@@ -33,7 +33,7 @@ public class PalestranteController {
 
     }
 
-    @GetMapping("palestrantes/{palestranteId}")
+    @GetMapping("/palestrantes/{palestranteId}")
     @Operation(summary = "Método de consulta de palestrante por id", description = "Método responsável pela consulta de um palestrante por id")
     public ResponseEntity<PalestranteResponse> buscarPorId(@PathVariable Long palestranteId) {
 
@@ -51,7 +51,7 @@ public class PalestranteController {
         return ResponseEntity.status(HttpStatus.CREATED).body(palestranteCriadoBanco);
     }
 
-    @PutMapping("palestrantes/{palestranteId}")
+    @PutMapping("/palestrantes/{palestranteId}")
     @Operation(summary = "Método de alterar informações do palestrante", description = "Método responsável pela alteração de palestrantes. Somente o organizador dono do evento pode alterar")
     public ResponseEntity<PalestranteResponse> atualizarPalestrante(@PathVariable Long palestranteId, @RequestParam Long organizadorId, @RequestBody AtualizarPalestranteRequest palestranteRequest) {
 
@@ -60,7 +60,7 @@ public class PalestranteController {
         return ResponseEntity.ok(palestranteAlteradoBanco);
     }
 
-    @DeleteMapping("/{palestranteId}/excluir")
+    @DeleteMapping("/palestrantes/{palestranteId}/excluir")
     @Operation(summary = "Método de exclusão de palestrante", description = "Método responsável pela exclusão de um palestrante. Somente o organizador dono do evento pode excluir")
     public ResponseEntity<Void> excluir(@PathVariable Long palestranteId, @RequestParam Long organizadorId) {
 

@@ -10,6 +10,7 @@ import com.example.eventpro.application.DTOs.auth.LoginResponse;
 import com.example.eventpro.application.DTOs.usuario.EsqueciSenhaRequest;
 import com.example.eventpro.application.DTOs.usuario.EsqueciSenhaResponse;
 import com.example.eventpro.application.DTOs.usuario.RedefinirSenhaRequest;
+import com.example.eventpro.application.ports.PasswordEncoderPort;
 import com.example.eventpro.domain.entities.Usuario;
 import com.example.eventpro.domain.exception.InvalidCredentialsException;
 import com.example.eventpro.domain.repository.UsuarioRepository;
@@ -24,9 +25,15 @@ public class AuthService {
 
     private final UsuarioRepository usuarioRepository;
 
+    private final PasswordEncoderPort passwordEncoder;
+
     public LoginResponse autenticarOrganizador(LoginRequest loginRequest) {
 
-        boolean credenciaisValidas = usuarioRepository.existsUsuarioByEmailAndSenha(loginRequest.email(), loginRequest.senha());
+        // A senha fica salva com BCrypt, entao a comparacao e feita pelo encoder e nao direto no banco
+        boolean credenciaisValidas = usuarioRepository
+        .findByEmail(loginRequest.email())
+        .map(usuarioBanco -> passwordEncoder.verifyPassword(loginRequest.senha(), usuarioBanco.getSenha()))
+        .orElse(false);
 
         if (!credenciaisValidas) {
             throw new InvalidCredentialsException("Usuario ou senha invalidos!");
@@ -51,7 +58,7 @@ public class AuthService {
 
         Usuario usuarioBanco = buscarUsuarioPorEmail(emailDoToken);
 
-        usuarioBanco.setSenha(redefinirSenhaRequest.novaSenha());
+        usuarioBanco.setSenha(passwordEncoder.encode(redefinirSenhaRequest.novaSenha()));
         usuarioRepository.save(usuarioBanco);
     }
 

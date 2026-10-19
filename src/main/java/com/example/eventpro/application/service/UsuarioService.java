@@ -10,6 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.example.eventpro.application.ports.PasswordEncoderPort;
 import com.example.eventpro.domain.entities.EnumStatus;
 import com.example.eventpro.domain.entities.Usuario;
+import com.example.eventpro.domain.exception.ChaveAdminInvalidaException;
 import com.example.eventpro.domain.repository.UsuarioRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -118,12 +119,13 @@ public class UsuarioService {
 
     public CriarAdminResponse criarAdmin(CriarAdminRequest criarAdminRequest) {
 
-        if(!criarAdminRequest.secretKey().equals(secret)){
-            return new CriarAdminResponse(0L,"Usuario Salvo com sucesso!");
-
+        // Sem a chave correta o admin nao e criado, o handler devolve 403 para o desktop
+        if(!secret.equals(criarAdminRequest.secretKey())){
+            throw new ChaveAdminInvalidaException("Chave de criacao de admin invalida!");
         }
 
         Usuario usuarioAdminSalvar = new Usuario(criarAdminRequest);
+        usuarioAdminSalvar.setSenha(passwordEncoder.encode(criarAdminRequest.senha()));
         usuarioRepository.save(usuarioAdminSalvar);
 
         return new CriarAdminResponse(usuarioAdminSalvar.getId(),"Usuario Salvo com sucesso!");
