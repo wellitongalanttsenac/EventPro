@@ -7,3 +7,4 @@ public class Launcher {
         Application.launch(AdminApplication.class, args);
     }
 }
+
