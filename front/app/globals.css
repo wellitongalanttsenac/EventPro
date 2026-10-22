@@ -1,26 +1,81 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Mesmo fundo e texto do painel, sem o tema claro/escuro padrão do create-next-app
+   (ele trocava a fonte do painel para Arial e deixava o fundo branco ao rolar além da página) */
+html,
+body {
+  background: #150606;
+  color: #f5edec;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Tabelas: no celular cada linha vira um cartão, com o nome da coluna vindo de data-label.
+   Fica fora de @layer para vencer os utilitários de padding das células. */
+@media (max-width: 767.98px) {
+  .tabela-responsiva thead {
+    display: none;
+  }
+
+  .tabela-responsiva,
+  .tabela-responsiva tbody,
+  .tabela-responsiva tr,
+  .tabela-responsiva td {
+    display: block;
+    width: 100%;
+  }
+
+  .tabela-responsiva tr {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 1.25rem;
+  }
+
+  .tabela-responsiva td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.375rem 0;
+    text-align: right;
+    max-width: none;
+  }
+
+  .tabela-responsiva td[data-label]::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    color: rgb(255 255 255 / 0.4);
+    text-align: left;
+  }
+
+  /* O título do cartão abre o bloco, mesmo vindo depois do ID na tabela */
+  .tabela-responsiva td.celula-principal {
+    order: -1;
+    display: block;
+    text-align: left;
+    padding-bottom: 0.5rem;
+  }
+
+  .tabela-responsiva td.celula-acoes {
+    display: block;
+    padding-top: 0.75rem;
+    text-align: left;
+  }
+
+  .tabela-responsiva td.celula-acoes > div {
+    justify-content: flex-start;
+  }
+
+  .tabela-responsiva td[colspan] {
+    display: block;
+    text-align: center;
+  }
 }

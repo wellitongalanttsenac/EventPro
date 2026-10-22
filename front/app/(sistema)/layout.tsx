@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getOrganizadorLogado } from "@/app/services/auth";
+import { useOrganizadorLogado } from "@/app/services/auth";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -13,18 +13,17 @@ export default function SistemaLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [autenticado, setAutenticado] = useState(false);
+  const organizador = useOrganizadorLogado();
+  const [menuAberto, setMenuAberto] = useState(false);
 
+  // null = sem login (ou sessão encerrada por um 401)
   useEffect(() => {
-    const organizador = getOrganizadorLogado();
-    if (!organizador || !organizador.id) {
-      router.push("/login");
-    } else {
-      setAutenticado(true);
+    if (organizador === null) {
+      router.replace("/login");
     }
-  }, [router]);
+  }, [organizador, router]);
 
-  if (!autenticado) {
+  if (!organizador) {
     return (
       <div className="min-h-screen bg-[#150606] flex items-center justify-center text-white/50 text-sm">
         <div className="flex flex-col items-center gap-3">
@@ -37,10 +36,10 @@ export default function SistemaLayout({
 
   return (
     <div className="flex min-h-screen bg-[#150606] text-[#F5EDEC]">
-      <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-[#150606]">
+      <Sidebar aberto={menuAberto} aoFechar={() => setMenuAberto(false)} />
+      <div className="flex-1 flex flex-col min-w-0">
+        <Header organizador={organizador} aoAbrirMenu={() => setMenuAberto(true)} />
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-[#150606]">
           {children}
         </main>
         <Footer />

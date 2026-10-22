@@ -11,7 +11,7 @@ export default function HomePage() {
     },
     {
       nome: "Eventos & Workshops",
-      descricao: "Cadastro de eventos, locais, datas e controle de lotes.",
+      descricao: "Cadastro de eventos com local, data e status.",
       href: "/eventos",
       icone: "🎟️",
       ativo: true,
@@ -35,7 +35,7 @@ export default function HomePage() {
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       {/* Banner de Boas-vindas */}
-      <div className="relative overflow-hidden bg-[#1D0B0B] border border-white/10 p-8 rounded-3xl shadow-xl">
+      <div className="relative overflow-hidden bg-[#1D0B0B] border border-white/10 p-6 sm:p-8 rounded-3xl shadow-xl">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -right-20 -top-20 w-64 h-64 rounded-full bg-[#FF3B3B]/10 blur-3xl"
@@ -44,7 +44,7 @@ export default function HomePage() {
           <p className="text-xs font-semibold tracking-widest text-[#FF3B3B] uppercase">
             Visão Geral do Sistema
           </p>
-          <h1 className="text-3xl font-bold tracking-tight text-white">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
             Bem-vindo ao Painel EventPro
           </h1>
           <p className="text-sm text-white/60 leading-relaxed">
@@ -63,7 +63,7 @@ export default function HomePage() {
             <Link
               key={modulo.nome}
               href={modulo.ativo ? modulo.href : "#"}
-              className={`group p-6 rounded-2xl border transition-all duration-200 flex items-start gap-4 ${
+              className={`group p-5 sm:p-6 rounded-2xl border transition-all duration-200 flex items-start gap-4 ${
                 modulo.ativo
                   ? "bg-[#1D0B0B] border-white/10 hover:border-[#FF3B3B]/50 hover:bg-[#250F0F]"
                   : "bg-[#180808] border-white/5 opacity-70 cursor-not-allowed"
@@ -73,12 +73,12 @@ export default function HomePage() {
                 {modulo.icone}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex items-start justify-between gap-3 mb-1">
                   <h3 className="font-semibold text-base text-white group-hover:text-[#FF3B3B] transition-colors">
                     {modulo.nome}
                   </h3>
                   {modulo.ativo ? (
-                    <span className="text-xs text-[#FF3B3B] font-medium flex items-center gap-1">
+                    <span className="text-xs text-[#FF3B3B] font-medium flex items-center gap-1 shrink-0 whitespace-nowrap pt-0.5">
                       Acessar &rarr;
                     </span>
                   ) : (

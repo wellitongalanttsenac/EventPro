@@ -2,10 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { LoginResponse } from "@/app/types/auth";
+import { LoginRequest, LoginResponse } from "@/app/types/auth";
 import { Usuario } from "@/app/types/usuario";
-import { api } from "@/app/services/api";
+import { api, mensagemDeErro } from "@/app/services/api";
 import { parseJwtPayload, setOrganizadorLogado } from "@/app/services/auth";
+import AvisoErro from "@/app/components/AvisoErro";
 import Link from "next/link";
 
 export default function LoginPage() {
@@ -23,48 +24,50 @@ export default function LoginPage() {
     const senha = formData.get("senha")?.toString() ?? "";
 
     try {
-      const resposta = await api.post<LoginResponse>("/auth/login", {
-        email,
-        senha,
+      const credenciais: LoginRequest = { email, senha };
+      const resposta = await api.post<LoginResponse>("/auth/login", credenciais);
+
+      const token = resposta.data.token;
+      const payload = parseJwtPayload(token);
+      const emailIdentificado = (payload?.sub || email).trim().toLowerCase();
+
+      // O token só traz o e-mail; o ID do organizador vem do cadastro
+      const usuariosRes = await api.get<Usuario[]>("/usuarios", {
+        headers: { Authorization: `Bearer ${token}` },
       });
+      const usuarioEncontrado = usuariosRes.data.find(
+        (u) => (u.email || "").trim().toLowerCase() === emailIdentificado
+      );
 
-      if (resposta.status === 200 && resposta.data?.token) {
-        const token = resposta.data.token;
-        const payload = parseJwtPayload(token);
-        const emailIdentificado = (payload?.sub || email).trim().toLowerCase();
-
-        // Busca dados cadastrais do organizador para capturar o ID
-        const usuariosRes = await api.get<Usuario[]>("/usuarios");
-        const usuarioEncontrado = usuariosRes.data.find(
-          (u) => (u.email || "").trim().toLowerCase() === emailIdentificado
-        );
-
-        if (usuarioEncontrado && usuarioEncontrado.id) {
-          // Grava apenas os campos necessários (sem senha nem cpf)
-          setOrganizadorLogado(
-            {
-              id: usuarioEncontrado.id,
-              nome: usuarioEncontrado.nome,
-              email: usuarioEncontrado.email,
-            },
-            token
-          );
-          router.push("/home");
-        } else {
-          setErro("Autenticação realizada, mas o cadastro do organizador não foi localizado.");
-        }
-      } else {
-        setErro("Usuário e/ou senha inválidos!");
+      if (!usuarioEncontrado) {
+        setErro("Login aceito, mas o cadastro deste organizador não foi encontrado.");
+        return;
       }
-    } catch {
-      setErro("Falha no login. Verifique as credenciais ou se o backend está ativo.");
+
+      if (usuarioEncontrado.status !== "ATIVO") {
+        setErro("Este organizador está bloqueado ou excluído. Peça a um administrador para reativá-lo.");
+        return;
+      }
+
+      // Grava apenas os campos necessários (sem senha nem cpf)
+      setOrganizadorLogado(
+        {
+          id: usuarioEncontrado.id,
+          nome: usuarioEncontrado.nome,
+          email: usuarioEncontrado.email,
+        },
+        token
+      );
+      router.push("/home");
+    } catch (error) {
+      setErro(mensagemDeErro(error, "Não foi possível entrar. Tente novamente."));
     } finally {
       setCarregando(false);
     }
   };
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center px-6 py-24 relative overflow-hidden">
+    <div className="min-h-[85vh] flex items-center justify-center px-4 sm:px-6 py-24 relative overflow-hidden">
       {/* Glow de fundo */}
       <div
         aria-hidden="true"
@@ -86,8 +89,8 @@ export default function LoginPage() {
         </div>
 
         {erro && (
-          <div className="mb-6 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-sm text-center">
-            {erro}
+          <div className="mb-6 text-center">
+            <AvisoErro mensagem={erro} />
           </div>
         )}
 
@@ -98,6 +101,7 @@ export default function LoginPage() {
             </label>
             <input
               type="email"
+              autoComplete="email"
               id="email"
               name="email"
               required
@@ -115,6 +119,7 @@ export default function LoginPage() {
             </label>
             <input
               type="password"
+              autoComplete="current-password"
               id="password"
               name="senha"
               required

@@ -9,7 +9,7 @@ export default function PublicoLayout({
     <div className="min-h-screen bg-[#150606] text-[#F5EDEC] font-sans antialiased selection:bg-[#FF3B3B] selection:text-[#150606] flex flex-col justify-between">
       {/* ===================== HEADER PÚBLICO ===================== */}
       <header className="fixed top-0 inset-x-0 z-50 border-b border-white/10 bg-[#150606]/80 backdrop-blur">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link
             href="/"
             className="flex items-center gap-2 rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF3B3B]"
@@ -36,7 +36,7 @@ export default function PublicoLayout({
           <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className="inline-flex px-4 py-2 text-sm font-medium text-white/80 hover:text-white transition-colors rounded"
+              className="hidden sm:inline-flex px-4 py-2 text-sm font-medium text-white/80 hover:text-white transition-colors rounded"
             >
               Entrar
             </Link>
@@ -55,7 +55,7 @@ export default function PublicoLayout({
 
       {/* ===================== FOOTER PÚBLICO ===================== */}
       <footer id="footer" className="border-t border-white/10 bg-[#150606]">
-        <div className="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex items-center gap-2">
             <span className="text-[#FF3B3B] text-xl leading-none">✱</span>
             <span className="font-semibold text-lg">EventPro</span>

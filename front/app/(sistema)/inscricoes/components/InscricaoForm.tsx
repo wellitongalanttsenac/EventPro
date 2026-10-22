@@ -3,57 +3,49 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { api, isAxiosError } from "@/app/services/api";
+import { api, mensagemDeErro } from "@/app/services/api";
 import { InscricaoFormProps, CriarInscricaoRequest } from "@/app/types/inscricao";
 import SeletorEvento from "@/app/components/SeletorEvento";
+import AvisoErro from "@/app/components/AvisoErro";
+import {
+  CLASSE_BOTAO_PRIMARIO,
+  CLASSE_BOTAO_SECUNDARIO,
+  CLASSE_CAMPO,
+  CLASSE_LABEL,
+  CLASSE_RODAPE_FORM,
+} from "@/app/utils/estilos";
 
 export default function InscricaoForm({ eventoIdPredefinido }: InscricaoFormProps) {
   const router = useRouter();
-  const [salvando, setSalvando] = useState(false);
 
-  const [eventoId, setEventoId] = useState<number | null>(
-    eventoIdPredefinido || null
-  );
+  const [eventoId, setEventoId] = useState<number | null>(eventoIdPredefinido ?? null);
   const [nomeParticipante, setNomeParticipante] = useState("");
   const [emailParticipante, setEmailParticipante] = useState("");
 
+  const [erroApi, setErroApi] = useState<string | null>(null);
+  const [salvando, setSalvando] = useState(false);
+
   const handleSalvar = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setErroApi(null);
 
     if (!eventoId) {
-      alert("Por favor, selecione o evento no qual o participante será inscrito.");
+      setErroApi("Selecione o evento no qual o participante será inscrito.");
       return;
     }
 
     setSalvando(true);
-
     const payload: CriarInscricaoRequest = {
       nomeParticipante: nomeParticipante.trim(),
       emailParticipante: emailParticipante.trim().toLowerCase(),
     };
 
     try {
-      // POST /eventos/{eventoId}/inscricoes
-      const resposta = await api.post(
-        `/eventos/${eventoId}/inscricoes`,
-        payload
-      );
-
-      if (resposta.status === 200 || resposta.status === 201) {
-        alert(
-          "Inscrição registrada com sucesso!\nStatus inicial: PENDENTE (a credencial será gerada após a confirmação)."
-        );
-        router.push(`/inscricoes?eventoId=${eventoId}`);
-      } else {
-        alert("Não foi possível cadastrar a inscrição.");
-      }
+      await api.post(`/eventos/${eventoId}/inscricoes`, payload);
+      alert("Inscrição registrada! Ela fica pendente até você confirmar e gerar a credencial.");
+      router.push(`/inscricoes?eventoId=${eventoId}`);
     } catch (error) {
-      if (isAxiosError(error) && error.response?.status === 404) {
-        alert("Evento não encontrado no servidor.");
-        router.push("/eventos");
-      } else {
-        alert("Erro de comunicação com o servidor ao registrar a inscrição.");
-      }
+      setErroApi(mensagemDeErro(error, "Não foi possível registrar a inscrição."));
     } finally {
       setSalvando(false);
     }
@@ -63,66 +55,62 @@ export default function InscricaoForm({ eventoIdPredefinido }: InscricaoFormProp
 
   return (
     <form onSubmit={handleSalvar} className="space-y-6">
-      {/* Seletor de Evento do Organizador */}
-      <div className="space-y-2">
-        <SeletorEvento
-          eventoIdSelecionado={eventoId}
-          onEventoChange={(id) => setEventoId(id)}
-          label="Evento Destino *"
-        />
-      </div>
+      <AvisoErro mensagem={erroApi} />
+
+      <SeletorEvento
+        eventoIdSelecionado={eventoId}
+        onEventoChange={(id) => setEventoId(id)}
+        label="Evento *"
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-white/70">
-            Nome do Participante *
+          <label htmlFor="inscricao-nome" className={CLASSE_LABEL}>
+            Nome do participante *
           </label>
           <input
+            id="inscricao-nome"
             type="text"
             required
+            maxLength={255}
             value={nomeParticipante}
             onChange={(e) => setNomeParticipante(e.target.value)}
             placeholder="Ex: Lucas Henrique Oliveira"
-            className="w-full px-4 py-3 bg-[#150606] border border-white/10 rounded-xl text-white placeholder:text-white/30 outline-none transition-colors focus:border-[#FF3B3B] focus-visible:ring-1 focus-visible:ring-[#FF3B3B]"
+            className={CLASSE_CAMPO}
           />
         </div>
 
         <div className="space-y-2">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-white/70">
-            E-mail do Participante *
+          <label htmlFor="inscricao-email" className={CLASSE_LABEL}>
+            E-mail do participante *
           </label>
           <input
+            id="inscricao-email"
             type="email"
             required
+            maxLength={255}
             value={emailParticipante}
             onChange={(e) => setEmailParticipante(e.target.value)}
             placeholder="participante@email.com"
-            className="w-full px-4 py-3 bg-[#150606] border border-white/10 rounded-xl text-white placeholder:text-white/30 outline-none transition-colors focus:border-[#FF3B3B] focus-visible:ring-1 focus-visible:ring-[#FF3B3B]"
+            className={CLASSE_CAMPO}
           />
         </div>
       </div>
 
       {/* Nota informativa sobre o status inicial */}
       <div className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-3">
-        <span className="text-[#FF3B3B] text-base leading-none mt-0.5">ℹ️</span>
+        <span className="text-[#FF3B3B] text-base leading-none mt-0.5" aria-hidden="true">ℹ️</span>
         <p className="text-xs text-white/60 leading-relaxed">
-          Toda nova inscrição é registrada inicialmente como <strong className="text-amber-400">PENDENTE</strong>. O código único de credencial é gerado e emitido automaticamente pelo backend no momento da <strong className="text-emerald-400">confirmação</strong> da inscrição.
+          Toda inscrição começa como <strong className="text-amber-400">pendente</strong>. A credencial única é gerada pela API quando você <strong className="text-emerald-400">confirma</strong> a inscrição.
         </p>
       </div>
 
-      <div className="flex items-center justify-end space-x-4 pt-6 border-t border-white/10">
-        <Link
-          href={voltarUrl}
-          className="px-6 py-2.5 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white font-medium text-sm rounded-full transition-colors border border-white/10"
-        >
+      <div className={CLASSE_RODAPE_FORM}>
+        <Link href={voltarUrl} className={CLASSE_BOTAO_SECUNDARIO}>
           Cancelar
         </Link>
-        <button
-          type="submit"
-          disabled={salvando || !eventoId}
-          className="px-7 py-2.5 bg-[#FF3B3B] hover:bg-[#ff5c5c] text-[#150606] font-semibold text-sm rounded-full shadow-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF3B3B] disabled:opacity-50"
-        >
-          {salvando ? "Registrando Inscrição..." : "Cadastrar Inscrição"}
+        <button type="submit" disabled={salvando || !eventoId} className={CLASSE_BOTAO_PRIMARIO}>
+          {salvando ? "Registrando..." : "Registrar inscrição"}
         </button>
       </div>
     </form>

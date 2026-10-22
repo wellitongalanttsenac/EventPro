@@ -1,119 +1,79 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Evento, EventoFormProps } from "@/app/types/evento";
-import { api, isAxiosError } from "@/app/services/api";
+import {
+  AtualizarEventoRequest,
+  CriarEventoRequest,
+  EnumStatusEvento,
+  EventoFormProps,
+} from "@/app/types/evento";
+import { api, mensagemDeErro } from "@/app/services/api";
 import { getOrganizadorLogado } from "@/app/services/auth";
+import AvisoErro from "@/app/components/AvisoErro";
+import { rotuloStatus } from "@/app/components/StatusBadge";
+import { dataParaInput, inputParaIso } from "@/app/utils/formatacao";
+import {
+  CLASSE_BOTAO_PRIMARIO,
+  CLASSE_BOTAO_SECUNDARIO,
+  CLASSE_CAMPO,
+  CLASSE_LABEL,
+  CLASSE_RODAPE_FORM,
+} from "@/app/utils/estilos";
 
-function formatDateForInput(dateStr?: string): string {
-  if (!dateStr) return "";
-  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(dateStr)) return dateStr;
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return "";
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const hours = String(d.getHours()).padStart(2, "0");
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
-
-function formatInputForBackend(inputValue: string): string {
-  if (!inputValue) return new Date().toISOString();
-  const d = new Date(inputValue);
-  if (isNaN(d.getTime())) {
-    return inputValue.length === 16 ? `${inputValue}:00` : inputValue;
-  }
-  return d.toISOString();
-}
+const STATUS_EVENTO: EnumStatusEvento[] = ["ABERTO", "EM_ANDAMENTO", "CONCLUIDO", "CANCELADO"];
 
 export default function EventoForm({ eventoExistente }: EventoFormProps) {
   const router = useRouter();
+
+  // A tela de edição só renderiza o formulário depois de carregar o evento,
+  // então o estado inicial já nasce com os dados certos
+  const [nome, setNome] = useState(eventoExistente?.nome ?? "");
+  const [descricao, setDescricao] = useState(eventoExistente?.descricao ?? "");
+  const [dataEvento, setDataEvento] = useState(dataParaInput(eventoExistente?.dataEvento));
+  const [local, setLocal] = useState(eventoExistente?.local ?? "");
+  const [status, setStatus] = useState<EnumStatusEvento>(eventoExistente?.status ?? "ABERTO");
+
+  const [erroApi, setErroApi] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
-
-  const [nome, setNome] = useState(eventoExistente?.nome || "");
-  const [descricao, setDescricao] = useState(eventoExistente?.descricao || "");
-  const [dataEvento, setDataEvento] = useState(
-    formatDateForInput(eventoExistente?.dataEvento)
-  );
-  const [local, setLocal] = useState(eventoExistente?.local || "");
-
-  useEffect(() => {
-    if (eventoExistente) {
-      setNome(eventoExistente.nome || "");
-      setDescricao(eventoExistente.descricao || "");
-      setDataEvento(formatDateForInput(eventoExistente.dataEvento));
-      setLocal(eventoExistente.local || "");
-    }
-  }, [eventoExistente]);
 
   const handleSalvar = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSalvando(true);
+    setErroApi(null);
 
     const organizador = getOrganizadorLogado();
-    if (!organizador || !organizador.id) {
-      alert("Sessão expirada. Faça login novamente.");
+    if (!organizador) {
       router.push("/login");
       return;
     }
 
+    setSalvando(true);
     try {
-      const dataIso = formatInputForBackend(dataEvento);
-
-      if (eventoExistente && eventoExistente.id) {
-        // Modo Edição: Verbo HTTP PUT
-        // Envia apenas os campos editáveis mantendo o status atual e sem sobrescrever organizador
-        const payloadAtualizacao = {
-          nome,
-          descricao,
-          dataEvento: dataIso,
-          local,
-          status: eventoExistente.status || "ABERTO",
+      if (eventoExistente) {
+        const payload: AtualizarEventoRequest = {
+          nome: nome.trim(),
+          descricao: descricao.trim(),
+          dataEvento: inputParaIso(dataEvento),
+          local: local.trim(),
+          status,
         };
-
-        const resposta = await api.put(
-          `/eventos/${eventoExistente.id}?organizadorId=${organizador.id}`,
-          payloadAtualizacao
-        );
-
-        if (resposta.status === 200 || resposta.status === 204) {
-          alert("Evento atualizado com sucesso!");
-          router.push("/eventos");
-        } else {
-          alert("Não foi possível atualizar o evento.");
-        }
+        await api.put(`/eventos/${eventoExistente.id}?organizadorId=${organizador.id}`, payload);
+        alert("Evento atualizado com sucesso!");
       } else {
-        // Modo Criação: Verbo HTTP POST
-        const payloadCriacao = {
-          nome,
-          descricao,
-          dataEvento: dataIso,
-          local,
+        const payload: CriarEventoRequest = {
+          nome: nome.trim(),
+          descricao: descricao.trim(),
+          dataEvento: inputParaIso(dataEvento),
+          local: local.trim(),
           organizadorId: organizador.id,
         };
-
-        const resposta = await api.post("/eventos", payloadCriacao);
-
-        if (resposta.status === 200 || resposta.status === 201) {
-          alert("Evento criado com sucesso!");
-          router.push("/eventos");
-        } else {
-          alert("Não foi possível criar o evento.");
-        }
+        await api.post("/eventos", payload);
+        alert("Evento criado com sucesso!");
       }
+      router.push("/eventos");
     } catch (error) {
-      if (isAxiosError(error) && error.response?.status === 403) {
-        alert("Apenas o organizador que criou o evento pode gerenciá-lo!");
-      } else if (isAxiosError(error) && error.response?.status === 404) {
-        alert("Evento não encontrado no sistema.");
-      } else if (isAxiosError(error) && typeof error.response?.data === "string") {
-        alert(error.response.data);
-      } else {
-        alert("Erro de comunicação com o servidor ao salvar o evento.");
-      }
+      setErroApi(mensagemDeErro(error, "Não foi possível salvar o evento."));
     } finally {
       setSalvando(false);
     }
@@ -121,84 +81,104 @@ export default function EventoForm({ eventoExistente }: EventoFormProps) {
 
   return (
     <form onSubmit={handleSalvar} className="space-y-6">
+      <AvisoErro mensagem={erroApi} />
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2 md:col-span-2">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-white/70">
-            Nome do Evento / Workshop *
+          <label htmlFor="evento-nome" className={CLASSE_LABEL}>
+            Nome do evento / workshop *
           </label>
           <input
+            id="evento-nome"
             name="nome"
             type="text"
             required
+            maxLength={255}
             value={nome}
             onChange={(e) => setNome(e.target.value)}
             placeholder="Ex: Workshop de Arquitetura de Software 2026"
-            className="w-full px-4 py-3 bg-[#150606] border border-white/10 rounded-xl text-white placeholder:text-white/30 outline-none transition-colors focus:border-[#FF3B3B] focus-visible:ring-1 focus-visible:ring-[#FF3B3B]"
+            className={CLASSE_CAMPO}
           />
         </div>
 
         <div className="space-y-2 md:col-span-2">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-white/70">
-            Descrição do Evento *
+          <label htmlFor="evento-descricao" className={CLASSE_LABEL}>
+            Descrição *
           </label>
           <textarea
+            id="evento-descricao"
             name="descricao"
             rows={3}
             required
+            maxLength={255}
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
-            placeholder="Breve resumo sobre a proposta, público-alvo e cronograma do evento..."
-            className="w-full px-4 py-3 bg-[#150606] border border-white/10 rounded-xl text-white placeholder:text-white/30 outline-none transition-colors focus:border-[#FF3B3B] focus-visible:ring-1 focus-visible:ring-[#FF3B3B]"
+            placeholder="Proposta, público-alvo e cronograma do evento"
+            className={`${CLASSE_CAMPO} resize-y`}
           />
+          <p className="text-[11px] text-white/40 text-right">{descricao.length}/255</p>
         </div>
 
         <div className="space-y-2">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-white/70">
-            Data e Horário *
+          <label htmlFor="evento-data" className={CLASSE_LABEL}>
+            Data e horário *
           </label>
           <input
+            id="evento-data"
             name="dataEvento"
             type="datetime-local"
             required
             value={dataEvento}
             onChange={(e) => setDataEvento(e.target.value)}
-            className="w-full px-4 py-3 bg-[#150606] border border-white/10 rounded-xl text-white placeholder:text-white/30 outline-none transition-colors focus:border-[#FF3B3B] focus-visible:ring-1 focus-visible:ring-[#FF3B3B] [color-scheme:dark]"
+            className={`${CLASSE_CAMPO} [color-scheme:dark]`}
           />
         </div>
 
         <div className="space-y-2">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-white/70">
-            Local / Plataforma *
+          <label htmlFor="evento-local" className={CLASSE_LABEL}>
+            Local / plataforma *
           </label>
           <input
+            id="evento-local"
             name="local"
             type="text"
             required
+            maxLength={255}
             value={local}
             onChange={(e) => setLocal(e.target.value)}
-            placeholder="Ex: Auditório Central Senac ou Online via Teams"
-            className="w-full px-4 py-3 bg-[#150606] border border-white/10 rounded-xl text-white placeholder:text-white/30 outline-none transition-colors focus:border-[#FF3B3B] focus-visible:ring-1 focus-visible:ring-[#FF3B3B]"
+            placeholder="Ex: Auditório Central Senac ou online via Teams"
+            className={CLASSE_CAMPO}
           />
         </div>
+
+        {eventoExistente && (
+          <div className="space-y-2">
+            <label htmlFor="evento-status" className={CLASSE_LABEL}>
+              Status *
+            </label>
+            <select
+              id="evento-status"
+              name="status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as EnumStatusEvento)}
+              className={`${CLASSE_CAMPO} cursor-pointer`}
+            >
+              {STATUS_EVENTO.map((opcao) => (
+                <option key={opcao} value={opcao} className="bg-[#150606]">
+                  {rotuloStatus(opcao)}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
-      <div className="flex items-center justify-end space-x-4 pt-6 border-t border-white/10">
-        <Link
-          href="/eventos"
-          className="px-6 py-2.5 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white font-medium text-sm rounded-full transition-colors border border-white/10"
-        >
+      <div className={CLASSE_RODAPE_FORM}>
+        <Link href="/eventos" className={CLASSE_BOTAO_SECUNDARIO}>
           Cancelar
         </Link>
-        <button
-          type="submit"
-          disabled={salvando}
-          className="px-7 py-2.5 bg-[#FF3B3B] hover:bg-[#ff5c5c] text-[#150606] font-semibold text-sm rounded-full shadow-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF3B3B] disabled:opacity-50"
-        >
-          {salvando
-            ? "Salvando..."
-            : eventoExistente
-            ? "Atualizar Evento"
-            : "Salvar Evento"}
+        <button type="submit" disabled={salvando} className={CLASSE_BOTAO_PRIMARIO}>
+          {salvando ? "Salvando..." : eventoExistente ? "Salvar alterações" : "Criar evento"}
         </button>
       </div>
     </form>

@@ -18,14 +18,9 @@ function newCredentialCode() {
 
 export default function LandingPage() {
   const [code, setCode] = useState("EVP-7F3A-91K2");
-  const [animating, setAnimating] = useState(false);
 
   const handleGenerateCode = () => {
-    setAnimating(false);
-    setTimeout(() => {
-      setCode(newCredentialCode());
-      setAnimating(true);
-    }, 50);
+    setCode(newCredentialCode());
   };
 
   return (
@@ -41,7 +36,7 @@ export default function LandingPage() {
           className="pointer-events-none absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full bg-[#FF3B3B]/10 blur-[120px]"
         />
 
-        <div className="relative max-w-7xl mx-auto px-6">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Coluna de texto */}
             <div>
@@ -140,7 +135,7 @@ export default function LandingPage() {
 
       {/* ===================== RECURSOS ===================== */}
       <section id="recursos" className="py-20 border-t border-white/10 bg-[#120505]">
-        <div className="max-w-7xl mx-auto px-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="max-w-2xl mb-12">
             <h2 className="text-3xl font-bold tracking-tight">
               Recursos do Ecossistema EventPro

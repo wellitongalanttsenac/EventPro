@@ -1,11 +1,17 @@
-import { Evento } from "./evento";
-
+// GET /eventos/{eventoId}/palestrantes e GET /eventos/{eventoId}/palestrantes/{id}
 export interface Palestrante {
-  id?: number;
+  id: number;
   nome: string;
   cpf: string;
   email: string;
-  evento?: Evento;
+  eventoId: number | null;
+}
+
+// POST e PUT /eventos/{eventoId}/palestrantes...?organizadorId=
+export interface PalestranteRequest {
+  nome: string;
+  cpf: string;
+  email: string;
 }
 
 export interface PalestranteFormProps {

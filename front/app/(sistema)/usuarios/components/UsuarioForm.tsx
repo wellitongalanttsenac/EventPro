@@ -1,70 +1,78 @@
 "use client";
 
-import { Usuario, UsuarioFormProps } from "@/app/types/usuario";
-import { api } from "@/app/services/api";
+import {
+  AtualizarUsuarioRequest,
+  CriarUsuarioRequest,
+  EnumStatusUsuario,
+  UsuarioFormProps,
+} from "@/app/types/usuario";
+import { api, mensagemDeErro } from "@/app/services/api";
+import AvisoErro from "@/app/components/AvisoErro";
+import { rotuloStatus } from "@/app/components/StatusBadge";
+import { cpfValido, mascararCpf } from "@/app/utils/formatacao";
+import {
+  CLASSE_BOTAO_PRIMARIO,
+  CLASSE_BOTAO_SECUNDARIO,
+  CLASSE_CAMPO,
+  CLASSE_ERRO_CAMPO,
+  CLASSE_LABEL,
+  CLASSE_RODAPE_FORM,
+} from "@/app/utils/estilos";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+const STATUS_USUARIO: EnumStatusUsuario[] = ["ATIVO", "BLOQUEADO", "EXCLUIDO"];
+
 export default function UsuarioForm({ usuarioExistente }: UsuarioFormProps) {
   const router = useRouter();
+  const editando = Boolean(usuarioExistente);
+
+  const [nome, setNome] = useState(usuarioExistente?.nome ?? "");
+  const [cpf, setCpf] = useState(mascararCpf(usuarioExistente?.cpf ?? ""));
+  const [email, setEmail] = useState(usuarioExistente?.email ?? "");
+  const [senha, setSenha] = useState("");
+  const [status, setStatus] = useState<EnumStatusUsuario>(usuarioExistente?.status ?? "ATIVO");
+
+  const [erroCpf, setErroCpf] = useState<string | null>(null);
+  const [erroApi, setErroApi] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
-
-  const [usuario, setUsuario] = useState<Usuario>(
-    usuarioExistente || new Usuario(null, "", "", "ATIVO", "", "")
-  );
-
-  const handleChange = (
-    campo: "nome" | "email" | "cpf" | "senha",
-    valor: string
-  ) => {
-    setUsuario(
-      (anterior) =>
-        new Usuario(
-          anterior.id,
-          campo === "nome" ? valor : anterior.nome,
-          campo === "email" ? valor : anterior.email,
-          anterior.status,
-          campo === "cpf" ? valor : anterior.cpf,
-          campo === "senha" ? valor : anterior.senha
-        )
-    );
-  };
 
   const handleSalvar = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setErroApi(null);
+
+    if (!cpfValido(cpf)) {
+      setErroCpf("CPF inválido. Confira os 11 dígitos.");
+      return;
+    }
+    setErroCpf(null);
     setSalvando(true);
 
     try {
-      if (usuarioExistente && usuario.id) {
-        // Modo Edição: Verbo HTTP PUT
-        const resposta = await api.put(
-          `/usuarios/${usuario.id}`,
-          usuario
-        );
-
-        if (resposta.status === 200 || resposta.status === 204) {
-          alert("Usuário atualizado com sucesso!");
-          router.push("/usuarios");
-        } else {
-          alert("Não foi possível atualizar o usuário.");
-        }
+      if (usuarioExistente) {
+        // PUT /usuarios/{id}: a API não altera a senha por esta rota
+        const payload: AtualizarUsuarioRequest = {
+          nome: nome.trim(),
+          cpf,
+          email: email.trim().toLowerCase(),
+          status,
+        };
+        await api.put(`/usuarios/${usuarioExistente.id}`, payload);
+        alert("Organizador atualizado com sucesso!");
       } else {
-        // Modo Criação: Verbo HTTP POST
-        const resposta = await api.post(
-          "/usuarios",
-          usuario
-        );
-
-        if (resposta.status === 200 || resposta.status === 201) {
-          alert("Usuário cadastrado com sucesso!");
-          router.push("/usuarios");
-        } else {
-          alert("Não foi possível cadastrar o usuário.");
-        }
+        const payload: CriarUsuarioRequest = {
+          nome: nome.trim(),
+          senha,
+          cpf,
+          email: email.trim().toLowerCase(),
+        };
+        await api.post("/usuarios", payload);
+        alert("Organizador cadastrado com sucesso!");
       }
-    } catch {
-      alert("Erro de comunicação com o servidor ao salvar o usuário.");
+      router.push("/usuarios");
+    } catch (error) {
+      setErroApi(mensagemDeErro(error, "Não foi possível salvar o organizador."));
     } finally {
       setSalvando(false);
     }
@@ -72,81 +80,122 @@ export default function UsuarioForm({ usuarioExistente }: UsuarioFormProps) {
 
   return (
     <form onSubmit={handleSalvar} className="space-y-6">
+      <AvisoErro mensagem={erroApi} />
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-white/70">
-            Nome Completo *
+          <label htmlFor="usuario-nome" className={CLASSE_LABEL}>
+            Nome completo *
           </label>
           <input
+            id="usuario-nome"
             name="nome"
             type="text"
             required
-            value={usuario.nome}
-            onChange={(e) => handleChange("nome", e.target.value)}
+            maxLength={255}
+            autoComplete="name"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
             placeholder="Ex: Carlos Eduardo Silva"
-            className="w-full px-4 py-3 bg-[#150606] border border-white/10 rounded-xl text-white placeholder:text-white/30 outline-none transition-colors focus:border-[#FF3B3B] focus-visible:ring-1 focus-visible:ring-[#FF3B3B]"
+            className={CLASSE_CAMPO}
           />
         </div>
 
         <div className="space-y-2">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-white/70">
+          <label htmlFor="usuario-cpf" className={CLASSE_LABEL}>
             CPF *
           </label>
           <input
+            id="usuario-cpf"
             name="cpf"
             type="text"
+            inputMode="numeric"
             required
-            value={usuario.cpf}
-            onChange={(e) => handleChange("cpf", e.target.value)}
+            value={cpf}
+            onChange={(e) => {
+              setCpf(mascararCpf(e.target.value));
+              setErroCpf(null);
+            }}
             placeholder="000.000.000-00"
-            className="w-full px-4 py-3 bg-[#150606] border border-white/10 rounded-xl text-white placeholder:text-white/30 outline-none transition-colors focus:border-[#FF3B3B] focus-visible:ring-1 focus-visible:ring-[#FF3B3B]"
+            aria-invalid={Boolean(erroCpf)}
+            aria-describedby={erroCpf ? "usuario-cpf-erro" : undefined}
+            className={CLASSE_CAMPO}
           />
+          {erroCpf && (
+            <p id="usuario-cpf-erro" className={CLASSE_ERRO_CAMPO}>
+              {erroCpf}
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-white/70">
+          <label htmlFor="usuario-email" className={CLASSE_LABEL}>
             E-mail *
           </label>
           <input
+            id="usuario-email"
             name="email"
             type="email"
             required
-            value={usuario.email}
-            onChange={(e) => handleChange("email", e.target.value)}
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             placeholder="organizador@eventpro.com"
-            className="w-full px-4 py-3 bg-[#150606] border border-white/10 rounded-xl text-white placeholder:text-white/30 outline-none transition-colors focus:border-[#FF3B3B] focus-visible:ring-1 focus-visible:ring-[#FF3B3B]"
+            className={CLASSE_CAMPO}
           />
         </div>
 
-        <div className="space-y-2">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-white/70">
-            Senha *
-          </label>
-          <input
-            name="senha"
-            type="password"
-            required
-            value={usuario.senha}
-            onChange={(e) => handleChange("senha", e.target.value)}
-            placeholder="••••••••"
-            className="w-full px-4 py-3 bg-[#150606] border border-white/10 rounded-xl text-white placeholder:text-white/30 outline-none transition-colors focus:border-[#FF3B3B] focus-visible:ring-1 focus-visible:ring-[#FF3B3B]"
-          />
-        </div>
+        {editando ? (
+          <div className="space-y-2">
+            <label htmlFor="usuario-status" className={CLASSE_LABEL}>
+              Status *
+            </label>
+            <select
+              id="usuario-status"
+              name="status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as EnumStatusUsuario)}
+              className={`${CLASSE_CAMPO} cursor-pointer`}
+            >
+              {STATUS_USUARIO.map((opcao) => (
+                <option key={opcao} value={opcao} className="bg-[#150606]">
+                  {rotuloStatus(opcao)}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <label htmlFor="usuario-senha" className={CLASSE_LABEL}>
+              Senha *
+            </label>
+            <input
+              id="usuario-senha"
+              name="senha"
+              type="password"
+              required
+              autoComplete="new-password"
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
+              placeholder="••••••••"
+              className={CLASSE_CAMPO}
+            />
+          </div>
+        )}
       </div>
 
-      <div className="flex items-center justify-end space-x-4 pt-6 border-t border-white/10">
-        <Link
-          href="/usuarios"
-          className="px-6 py-2.5 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white font-medium text-sm rounded-full transition-colors border border-white/10"
-        >
+      {editando && (
+        <p className="text-xs text-white/40">
+          A senha do organizador não é alterada nesta tela.
+        </p>
+      )}
+
+      <div className={CLASSE_RODAPE_FORM}>
+        <Link href="/usuarios" className={CLASSE_BOTAO_SECUNDARIO}>
           Cancelar
         </Link>
-        <button
-          type="submit"
-          disabled={salvando}
-          className="px-7 py-2.5 bg-[#FF3B3B] hover:bg-[#ff5c5c] text-[#150606] font-semibold text-sm rounded-full shadow-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF3B3B] disabled:opacity-50"
-        >
-          {salvando ? "Salvando..." : usuarioExistente ? "Atualizar Usuário" : "Salvar Usuário"}
+        <button type="submit" disabled={salvando} className={CLASSE_BOTAO_PRIMARIO}>
+          {salvando ? "Salvando..." : editando ? "Salvar alterações" : "Cadastrar organizador"}
         </button>
       </div>
     </form>
