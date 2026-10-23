@@ -5,6 +5,11 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.example.eventpro.application.DTOs.usuario.UsuarioLogado;
+import com.example.eventpro.domain.entities.Token;
+import com.example.eventpro.domain.repository.TokenRepository;
+import com.example.eventpro.domain.repository.UsuarioRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -23,10 +28,20 @@ public class TokenService {
 
     private String emissor = "EVENTPRO";
 
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private TokenRepository tokenRepository;
+
     public String geraToken(String subject){
         try{
 
             Algorithm algorithm = Algorithm.HMAC256(secret);
+
+            var usuario = usuarioRepository.findAll()
+                    .stream().filter( u-> u.getEmail().equals(loginResquestDto.email()))
+                    .findFirst().orElse(null);
 
             String token = JWT.create()
                     .withIssuer(emissor)
@@ -34,6 +49,8 @@ public class TokenService {
                     .withExpiresAt(getDataExpiracao())
                     .sign(algorithm)
                     ;
+
+            tokenRepository.save(new Token(token,usuario));
 
             return token;
 
@@ -49,7 +66,13 @@ public class TokenService {
 
         JWTVerifier verificador = JWT.require(algorithm).withIssuer(emissor).build();
 
-        return verificador.verify(token);
+        var tokenBanco = tokenRepository.findTokenBytoken(token).orElse(null);
+
+        if(tokenBanco == null){
+            throw new IllegalArgumentException("Token invalido");
+        }
+
+        return new UsuarioLogado(tokenBanco.getUsuario());
 
     }
 
