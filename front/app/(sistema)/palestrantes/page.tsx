@@ -1,66 +1,75 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { api, mensagemDeErro } from "@/app/services/api";
-import { getOrganizadorLogado } from "@/app/services/auth";
-import { Palestrante } from "@/app/types/palestrante";
-import SeletorEvento from "@/app/components/SeletorEvento";
-import ResumoEvento from "@/app/components/ResumoEvento";
 import AvisoErro from "@/app/components/AvisoErro";
-import { useEventoDoOrganizador } from "@/app/hooks/useEventoDoOrganizador";
+import ResumoEvento from "@/app/components/ResumoEvento";
+import SeletorEvento from "@/app/components/SeletorEvento";
+import { RootState } from "@/app/redux/store";
+import { mensagemDeErro } from "@/app/services/api";
+import { consultaEventoDoOrganizador } from "@/app/services/eventoService";
+import { buscarListaPalestrantes, deletarPalestrante } from "@/app/services/palestranteService";
+import { Evento } from "@/app/types/evento";
+import { Palestrante } from "@/app/types/palestrante";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
-interface ListaCarregada {
-  eventoId: number;
-  palestrantes: Palestrante[];
-  erro: string | null;
-}
+function ListaPalestrantes({ eventoId }: { eventoId: number | null }) {
+  const router = useRouter();
+  const organizadorId = useSelector((state: RootState) => state.auth.usuario?.id ?? null);
 
-function PalestrantesConteudo() {
-  const searchParams = useSearchParams();
-  const queryEventoId = searchParams.get("eventoId");
-  const eventoId = queryEventoId ? Number(queryEventoId) : null;
+  const [evento, setEvento] = useState<Evento | null>(null);
+  const [palestrantes, setPalestrantes] = useState<Palestrante[]>([]);
+  const [validandoEvento, setValidandoEvento] = useState(Boolean(eventoId));
+  const [carregandoLista, setCarregandoLista] = useState(true);
+  const [erroEvento, setErroEvento] = useState<string | null>(null);
+  const [erroLista, setErroLista] = useState<string | null>(null);
 
-  const { evento, erro: erroEvento, carregando: validandoPosse } = useEventoDoOrganizador(
-    eventoId,
-    "gerenciar palestrantes"
-  );
-
-  const [lista, setLista] = useState<ListaCarregada | null>(null);
-  const [versao, setVersao] = useState(0);
-
-  // Só busca a lista depois que a posse do evento foi confirmada
-  const eventoConfirmadoId = evento?.id ?? null;
+  const carregarPalestrantes = async (id: number) => {
+    try {
+      const dados = await buscarListaPalestrantes(id);
+      setPalestrantes(dados);
+      setErroLista(null);
+    } catch (error) {
+      setErroLista(mensagemDeErro(error, "Não foi possível carregar os palestrantes."));
+    } finally {
+      setCarregandoLista(false);
+    }
+  };
 
   useEffect(() => {
-    if (!eventoConfirmadoId) return;
+    if (!eventoId) return;
+
     let ativo = true;
-    api
-      .get<Palestrante[]>(`/eventos/${eventoConfirmadoId}/palestrantes`)
-      .then((resposta) => {
-        if (ativo) setLista({ eventoId: eventoConfirmadoId, palestrantes: resposta.data, erro: null });
-      })
-      .catch((error) => {
-        if (ativo) {
-          setLista({
-            eventoId: eventoConfirmadoId,
-            palestrantes: [],
-            erro: mensagemDeErro(error, "Não foi possível carregar os palestrantes."),
-          });
+
+    // Só busca a lista depois que a posse do evento foi confirmada
+    const carregarDados = async () => {
+      try {
+        const valorEventoBack = await consultaEventoDoOrganizador(eventoId, organizadorId);
+        if (!ativo) return;
+        if (!valorEventoBack) {
+          alert("Você só pode gerenciar palestrantes em eventos organizados por você.");
+          router.push("/eventos");
+          return;
         }
-      });
+        setEvento(valorEventoBack);
+        setValidandoEvento(false);
+        carregarPalestrantes(eventoId);
+      } catch (error) {
+        setErroEvento(mensagemDeErro(error, "Não foi possível carregar o evento."));
+        setValidandoEvento(false);
+      }
+    };
+
+    carregarDados();
+
     return () => {
       ativo = false;
     };
-  }, [eventoConfirmadoId, versao]);
+  }, [eventoId, organizadorId, router]);
 
-  const listaAtual = lista && lista.eventoId === eventoConfirmadoId ? lista : null;
-  const palestrantes = listaAtual?.palestrantes ?? [];
-
-  const handleExcluir = async (palestrante: Palestrante) => {
-    const organizadorLogado = getOrganizadorLogado();
-    if (!eventoId || !organizadorLogado) return;
+  const handleDeletarPalestrante = async (palestrante: Palestrante) => {
+    if (!eventoId) return;
 
     const confirmou = confirm(
       `Excluir o palestrante "${palestrante.nome}"?\n\nEsta ação não pode ser desfeita.`
@@ -68,10 +77,8 @@ function PalestrantesConteudo() {
     if (!confirmou) return;
 
     try {
-      await api.delete(
-        `/eventos/${eventoId}/palestrantes/${palestrante.id}/excluir?organizadorId=${organizadorLogado.id}`
-      );
-      setVersao((v) => v + 1);
+      await deletarPalestrante(eventoId, palestrante.id || 0);
+      carregarPalestrantes(eventoId);
     } catch (error) {
       alert(mensagemDeErro(error, "Não foi possível excluir o palestrante."));
     }
@@ -105,7 +112,7 @@ function PalestrantesConteudo() {
 
       <SeletorEvento eventoIdSelecionado={eventoId} rotaBase="/palestrantes" label="Evento selecionado" />
 
-      {validandoPosse ? (
+      {validandoEvento ? (
         <div className="bg-[#1D0B0B] border border-white/10 p-12 rounded-3xl text-center shadow-xl">
           <div className="inline-block animate-spin w-6 h-6 border-2 border-[#FF3B3B] border-t-transparent rounded-full mb-3" />
           <p className="text-white/50 text-sm">Validando o evento selecionado...</p>
@@ -119,7 +126,7 @@ function PalestrantesConteudo() {
             atalho={{ href: `/inscricoes?eventoId=${evento.id}`, rotulo: "Ir para inscrições", icone: "🛡️" }}
           />
 
-          <AvisoErro mensagem={listaAtual?.erro ?? null} />
+          <AvisoErro mensagem={erroLista} />
 
           {/* Tabela de Palestrantes */}
           <div className="md:overflow-x-auto -mx-5 sm:-mx-6 md:mx-0">
@@ -134,7 +141,7 @@ function PalestrantesConteudo() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 text-white/80">
-                {!listaAtual ? (
+                {carregandoLista ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center text-white/40 text-sm">
                       <div className="inline-block animate-spin w-6 h-6 border-2 border-[#FF3B3B] border-t-transparent rounded-full mb-3" />
@@ -166,7 +173,7 @@ function PalestrantesConteudo() {
                           </Link>
                           <button
                             type="button"
-                            onClick={() => handleExcluir(palestrante)}
+                            onClick={() => handleDeletarPalestrante(palestrante)}
                             className="text-xs font-medium text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 px-3 py-1.5 rounded-lg transition-colors"
                           >
                             Excluir
@@ -208,7 +215,16 @@ function PalestrantesConteudo() {
   );
 }
 
-export default function PalestrantesPage() {
+function PalestrantesConteudo() {
+  const searchParams = useSearchParams();
+  const queryEventoId = searchParams.get("eventoId");
+  const eventoId = queryEventoId ? Number(queryEventoId) : null;
+
+  // A key recria a tela ao trocar de evento, descartando os dados do evento anterior
+  return <ListaPalestrantes key={eventoId ?? "sem-evento"} eventoId={eventoId} />;
+}
+
+export default function Palestrantes() {
   return (
     <Suspense
       fallback={

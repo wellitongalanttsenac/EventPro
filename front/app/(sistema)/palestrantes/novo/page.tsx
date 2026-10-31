@@ -1,19 +1,53 @@
 "use client";
 
-import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
-import PalestranteForm from "../components/PalestranteForm";
 import AvisoErro from "@/app/components/AvisoErro";
-import { useEventoDoOrganizador } from "@/app/hooks/useEventoDoOrganizador";
+import { RootState } from "@/app/redux/store";
+import { mensagemDeErro } from "@/app/services/api";
+import { consultaEventoDoOrganizador } from "@/app/services/eventoService";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import PalestranteForm from "../components/PalestranteForm";
 
-function NovoPalestranteConteudo() {
+function CadastroPalestranteConteudo() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const queryEventoId = searchParams.get("eventoId");
   const eventoId = queryEventoId ? Number(queryEventoId) : null;
+  const organizadorId = useSelector((state: RootState) => state.auth.usuario?.id ?? null);
 
   // Sem eventoId na URL o organizador escolhe o evento no próprio formulário
-  const { erro, carregando } = useEventoDoOrganizador(eventoId, "cadastrar palestrantes");
+  const [carregando, setCarregando] = useState(Boolean(eventoId));
+  const [erro, setErro] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!eventoId) return;
+
+    let ativo = true;
+
+    const buscarDados = async () => {
+      try {
+        const valorEventoBack = await consultaEventoDoOrganizador(eventoId, organizadorId);
+        if (!ativo) return;
+        if (!valorEventoBack) {
+          alert("Você só pode cadastrar palestrantes em eventos organizados por você.");
+          router.push("/eventos");
+          return;
+        }
+        setCarregando(false);
+      } catch (error) {
+        setErro(mensagemDeErro(error, "Não foi possível carregar o evento."));
+        setCarregando(false);
+      }
+    };
+
+    buscarDados();
+
+    return () => {
+      ativo = false;
+    };
+  }, [eventoId, organizadorId, router]);
 
   const voltarUrl = eventoId ? `/palestrantes?eventoId=${eventoId}` : "/palestrantes";
 
@@ -59,7 +93,7 @@ function NovoPalestranteConteudo() {
   );
 }
 
-export default function NovoPalestrantePage() {
+export default function CadastroPalestrante() {
   return (
     <Suspense
       fallback={
@@ -69,7 +103,7 @@ export default function NovoPalestrantePage() {
         </div>
       }
     >
-      <NovoPalestranteConteudo />
+      <CadastroPalestranteConteudo />
     </Suspense>
   );
 }

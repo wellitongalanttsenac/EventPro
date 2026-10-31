@@ -1,38 +1,36 @@
+"use client";
+
 import axios, { isAxiosError } from "axios";
-import { getToken, logout } from "./auth";
+import Cookies from "js-cookie";
+import { logout } from "../redux/slices/authSlice";
+import { store } from "../redux/store";
 import { ErroResponse } from "../types/auth";
 
-export const api = axios.create({
+const api = axios.create({
   baseURL: "http://localhost:8080",
 });
 
-export { isAxiosError };
-
-// Interceptor de requisição: anexa o token JWT quando disponível
 api.interceptors.request.use((config) => {
-  const token = getToken();
+  const token = Cookies.get("token");
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
   return config;
 });
 
-// Interceptor de resposta: em 401 fora do login a sessão é encerrada.
-// O layout do sistema percebe a sessão vazia e leva o usuário para /login.
+// Em 401 fora do login a sessão é encerrada e o layout do sistema leva para /login
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     const ehLogin = error?.config?.url?.startsWith("/auth/");
     if (error?.response?.status === 401 && !ehLogin) {
-      logout();
+      store.dispatch(logout());
     }
     return Promise.reject(error);
   }
 );
-
-export function statusDoErro(error: unknown): number | undefined {
-  return isAxiosError(error) ? error.response?.status : undefined;
-}
 
 // Traduz qualquer falha da API em uma frase para o usuário.
 // Prioridade: mensagem enviada pela API (ErroResponse) > texto padrão por status > texto padrão da tela.
@@ -62,3 +60,5 @@ export function mensagemDeErro(error: unknown, padrao: string): string {
       return padrao;
   }
 }
+
+export default api;

@@ -1,25 +1,15 @@
 export type EnumStatusInscricao = "PENDENTE" | "CONFIRMADA" | "CANCELADA";
 
-// GET /eventos/{eventoId}/inscricoes e GET /eventos/{eventoId}/inscricoes/{id}
-export interface Inscricao {
-  id: number;
-  nomeParticipante: string;
-  emailParticipante: string;
-  dataInscricao: string | null;
-  status: EnumStatusInscricao;
-  credencial: string | null;
-  eventoId: number | null;
-}
-
-// POST /eventos/{eventoId}/inscricoes
-export interface CriarInscricaoRequest {
-  nomeParticipante: string;
-  emailParticipante: string;
-}
-
-// PATCH /eventos/{eventoId}/inscricoes/{id}/status?organizadorId=
-export interface AtualizarStatusInscricaoRequest {
-  status: EnumStatusInscricao;
+export class Inscricao {
+  constructor(
+    public id: number | null,
+    public nomeParticipante: string,
+    public emailParticipante: string,
+    public dataInscricao: string | null,
+    public status: EnumStatusInscricao,
+    public credencial: string | null,
+    public eventoId: number | null
+  ) {}
 }
 
 export interface InscricaoFormProps {

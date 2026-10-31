@@ -1,68 +1,62 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Evento, EnumStatusEvento } from "@/app/types/evento";
-import { api, mensagemDeErro } from "@/app/services/api";
-import { useOrganizadorLogado } from "@/app/services/auth";
-import StatusBadge, { classesStatus, rotuloStatus } from "@/app/components/StatusBadge";
 import AvisoErro from "@/app/components/AvisoErro";
+import StatusBadge, { classesStatus, rotuloStatus } from "@/app/components/StatusBadge";
+import { RootState } from "@/app/redux/store";
+import { mensagemDeErro } from "@/app/services/api";
+import { atualizarStatusEvento, buscarListaEventos, cancelarEvento } from "@/app/services/eventoService";
+import { EnumStatusEvento, Evento } from "@/app/types/evento";
 import { formatarDataHora } from "@/app/utils/formatacao";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
 const CLASSE_TH = "px-6 py-4 text-xs font-semibold tracking-wider uppercase text-white/50";
 const STATUS_EVENTO: EnumStatusEvento[] = ["ABERTO", "EM_ANDAMENTO", "CONCLUIDO", "CANCELADO"];
 
-export default function EventosPage() {
-  const organizadorLogado = useOrganizadorLogado();
+export default function Eventos() {
+  const usuarioLogado = useSelector((state: RootState) => state.auth.usuario);
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [versao, setVersao] = useState(0);
 
   useEffect(() => {
-    let ativo = true;
-    api
-      .get<Evento[]>("/eventos")
-      .then((resposta) => {
-        if (!ativo) return;
-        setEventos(resposta.data);
+    const carregarDados = async () => {
+      try {
+        const dados = await buscarListaEventos();
+        setEventos(dados);
         setErro(null);
-      })
-      .catch((error) => {
-        if (ativo) setErro(mensagemDeErro(error, "Não foi possível carregar os eventos."));
-      })
-      .finally(() => {
-        if (ativo) setCarregando(false);
-      });
-    return () => {
-      ativo = false;
+      } catch (error) {
+        setErro(mensagemDeErro(error, "Não foi possível carregar os eventos."));
+      } finally {
+        setCarregando(false);
+      }
     };
+
+    carregarDados();
   }, [versao]);
 
-  const recarregar = () => setVersao((v) => v + 1);
+  const recarregarDados = () => setVersao((valorAnterior) => valorAnterior + 1);
 
   const handleCancelarEvento = async (evento: Evento) => {
-    if (!organizadorLogado) return;
-
     const confirmou = confirm(`Cancelar o evento "${evento.nome}"?\n\nO status passa para Cancelado.`);
     if (!confirmou) return;
 
     try {
-      await api.delete(`/eventos/${evento.id}/excluir?organizadorId=${organizadorLogado.id}`);
-      recarregar();
+      await cancelarEvento(evento.id || 0);
+      recarregarDados();
     } catch (error) {
       alert(mensagemDeErro(error, "Não foi possível cancelar o evento."));
     }
   };
 
-  const handleAlterarStatus = async (evento: Evento, novoStatus: EnumStatusEvento) => {
-    if (!organizadorLogado || evento.status === novoStatus) return;
+  const handleAlterarStatusEvento = async (evento: Evento, novoStatus: EnumStatusEvento) => {
+    if (evento.status === novoStatus) return;
 
     try {
-      await api.patch(`/eventos/${evento.id}/status?organizadorId=${organizadorLogado.id}`, {
-        status: novoStatus,
-      });
-      recarregar();
+      await atualizarStatusEvento(evento.id || 0, novoStatus);
+      recarregarDados();
     } catch (error) {
       alert(mensagemDeErro(error, "Não foi possível alterar o status do evento."));
     }
@@ -117,7 +111,7 @@ export default function EventosPage() {
                 </tr>
               ) : eventos.length > 0 ? (
                 eventos.map((evento) => {
-                  const ehDono = Boolean(organizadorLogado) && evento.organizador?.id === organizadorLogado?.id;
+                  const ehDono = Boolean(usuarioLogado) && evento.organizador?.id === usuarioLogado?.id;
 
                   return (
                     <tr key={evento.id} className="hover:bg-white/[0.03] transition-colors">
@@ -155,7 +149,7 @@ export default function EventosPage() {
                           <select
                             value={evento.status}
                             aria-label={`Status do evento ${evento.nome}`}
-                            onChange={(e) => handleAlterarStatus(evento, e.target.value as EnumStatusEvento)}
+                            onChange={(e) => handleAlterarStatusEvento(evento, e.target.value as EnumStatusEvento)}
                             className={`text-xs font-semibold px-2.5 py-1 rounded-full border cursor-pointer bg-[#1D0B0B] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3B3B] ${classesStatus(evento.status)}`}
                           >
                             {STATUS_EVENTO.map((opcao) => (

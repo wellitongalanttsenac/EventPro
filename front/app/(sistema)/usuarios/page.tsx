@@ -1,64 +1,60 @@
 "use client";
 
-import { EnumStatusUsuario, Usuario } from "@/app/types/usuario";
-import { api, mensagemDeErro } from "@/app/services/api";
-import { useOrganizadorLogado } from "@/app/services/auth";
-import StatusBadge from "@/app/components/StatusBadge";
 import AvisoErro from "@/app/components/AvisoErro";
+import StatusBadge from "@/app/components/StatusBadge";
+import { RootState } from "@/app/redux/store";
+import { mensagemDeErro } from "@/app/services/api";
+import { atualizarStatusUsuario, buscarListaUsuarios, deletarUsuario } from "@/app/services/usuarioService";
+import { Usuario } from "@/app/types/usuario";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
 const CLASSE_TH = "px-6 py-4 text-xs font-semibold tracking-wider uppercase text-white/50";
 
-export default function UsuariosPage() {
-  const organizadorLogado = useOrganizadorLogado();
+export default function Usuarios() {
+  const usuarioLogado = useSelector((state: RootState) => state.auth.usuario);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [versao, setVersao] = useState(0);
 
   useEffect(() => {
-    let ativo = true;
-    api
-      .get<Usuario[]>("/usuarios")
-      .then((resposta) => {
-        if (!ativo) return;
-        setUsuarios(resposta.data);
+    const carregarDados = async () => {
+      try {
+        const dados = await buscarListaUsuarios();
+        setUsuarios(dados);
         setErro(null);
-      })
-      .catch((error) => {
-        if (ativo) setErro(mensagemDeErro(error, "Não foi possível carregar os organizadores."));
-      })
-      .finally(() => {
-        if (ativo) setCarregando(false);
-      });
-    return () => {
-      ativo = false;
+      } catch (error) {
+        setErro(mensagemDeErro(error, "Não foi possível carregar os organizadores."));
+      } finally {
+        setCarregando(false);
+      }
     };
+
+    carregarDados();
   }, [versao]);
 
-  const recarregar = () => setVersao((v) => v + 1);
+  const recarregarDados = () => setVersao((valorAnterior) => valorAnterior + 1);
 
-  const handleExcluir = async (usuario: Usuario) => {
+  const handleDeletarUsuario = async (usuario: Usuario) => {
     const confirmou = confirm(
       `Excluir o organizador "${usuario.nome}"?\n\nO cadastro fica com status Excluído e pode ser reativado depois.`
     );
     if (!confirmou) return;
 
     try {
-      await api.delete(`/usuarios/${usuario.id}/excluir`);
-      recarregar();
+      await deletarUsuario(usuario.id || 0);
+      recarregarDados();
     } catch (error) {
       alert(mensagemDeErro(error, "Não foi possível excluir o organizador."));
     }
   };
 
-  const handleAlterarStatus = async (usuario: Usuario) => {
-    const novoStatus: EnumStatusUsuario = usuario.status === "ATIVO" ? "BLOQUEADO" : "ATIVO";
-
+  const handleAlterarStatusUsuario = async (usuario: Usuario) => {
     try {
-      await api.patch(`/usuarios/${usuario.id}/status`, { status: novoStatus });
-      recarregar();
+      await atualizarStatusUsuario(usuario);
+      recarregarDados();
     } catch (error) {
       alert(mensagemDeErro(error, "Não foi possível alterar o status."));
     }
@@ -113,7 +109,7 @@ export default function UsuariosPage() {
                 </tr>
               ) : usuarios.length > 0 ? (
                 usuarios.map((usuario) => {
-                  const ehVoce = organizadorLogado?.id === usuario.id;
+                  const ehVoce = usuarioLogado?.id === usuario.id;
 
                   return (
                     <tr key={usuario.id} className="hover:bg-white/[0.03] transition-colors">
@@ -151,7 +147,7 @@ export default function UsuariosPage() {
                           {!ehVoce && (
                             <button
                               type="button"
-                              onClick={() => handleAlterarStatus(usuario)}
+                              onClick={() => handleAlterarStatusUsuario(usuario)}
                               className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors ${
                                 usuario.status === "ATIVO"
                                   ? "bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20"
@@ -165,7 +161,7 @@ export default function UsuariosPage() {
                           {!ehVoce && usuario.status !== "EXCLUIDO" && (
                             <button
                               type="button"
-                              onClick={() => handleExcluir(usuario)}
+                              onClick={() => handleDeletarUsuario(usuario)}
                               className="text-xs font-medium text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 px-3 py-1.5 rounded-lg transition-colors"
                             >
                               Excluir

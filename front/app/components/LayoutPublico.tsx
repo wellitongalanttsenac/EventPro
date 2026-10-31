@@ -1,10 +1,7 @@
 import Link from "next/link";
 
-export default function PublicoLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+// Header e footer das telas públicas (página inicial e login)
+export default function LayoutPublico({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-[#150606] text-[#F5EDEC] font-sans antialiased selection:bg-[#FF3B3B] selection:text-[#150606] flex flex-col justify-between">
       {/* ===================== HEADER PÚBLICO ===================== */}

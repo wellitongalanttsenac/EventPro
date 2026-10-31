@@ -1,42 +1,49 @@
 "use client";
 
+import { RootState } from "@/app/redux/store";
+import { mensagemDeErro } from "@/app/services/api";
+import { consultaEventoDoOrganizador } from "@/app/services/eventoService";
 import { Evento } from "@/app/types/evento";
-import { api, mensagemDeErro } from "@/app/services/api";
-import { getOrganizadorLogado } from "@/app/services/auth";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import EventoForm from "@/app/(sistema)/eventos/components/EventoForm";
+import { useSelector } from "react-redux";
+import EventoForm from "../../components/EventoForm";
 
-export default function EditarEventoPage() {
+export default function EditarEvento() {
   const parametro = useParams();
   const router = useRouter();
   const codigo = Number(parametro.codigo);
+  const organizadorId = useSelector((state: RootState) => state.auth.usuario?.id ?? null);
 
   const [evento, setEvento] = useState<Evento | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
     let ativo = true;
-    api
-      .get<Evento>(`/eventos/${codigo}`)
-      .then((resposta) => {
+
+    const buscarDados = async () => {
+      try {
+        const valorEventoBack = await consultaEventoDoOrganizador(codigo, organizadorId);
         if (!ativo) return;
         // Regra de posse: só o organizador criador pode editar
-        if (resposta.data.organizador?.id !== getOrganizadorLogado()?.id) {
+        if (valorEventoBack) {
+          setEvento(valorEventoBack);
+        } else {
           alert("Você só pode editar eventos organizados por você.");
           router.push("/eventos");
-          return;
         }
-        setEvento(resposta.data);
-      })
-      .catch((error) => {
-        if (ativo) setErro(mensagemDeErro(error, "Não foi possível carregar o evento."));
-      });
+      } catch (error) {
+        setErro(mensagemDeErro(error, "Não foi possível carregar o evento."));
+      }
+    };
+
+    buscarDados();
+
     return () => {
       ativo = false;
     };
-  }, [codigo, router]);
+  }, [codigo, organizadorId, router]);
 
   if (erro) {
     return (

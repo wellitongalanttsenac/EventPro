@@ -1,13 +1,14 @@
 "use client";
 
+import { mensagemDeErro } from "@/app/services/api";
+import { consultaUsuarioPorId } from "@/app/services/usuarioService";
 import { Usuario } from "@/app/types/usuario";
-import { api, mensagemDeErro } from "@/app/services/api";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import UsuarioForm from "../../components/UsuarioForm";
 
-export default function EditarUsuarioPage() {
+export default function EditarUsuario() {
   const parametro = useParams();
   const codigo = Number(parametro.codigo);
 
@@ -15,18 +16,16 @@ export default function EditarUsuarioPage() {
   const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
-    let ativo = true;
-    api
-      .get<Usuario>(`/usuarios/${codigo}`)
-      .then((resposta) => {
-        if (ativo) setUsuario(resposta.data);
-      })
-      .catch((error) => {
-        if (ativo) setErro(mensagemDeErro(error, "Não foi possível carregar o organizador."));
-      });
-    return () => {
-      ativo = false;
+    const buscarDados = async () => {
+      try {
+        const valorUsuarioBack = await consultaUsuarioPorId(codigo);
+        setUsuario(valorUsuarioBack);
+      } catch (error) {
+        setErro(mensagemDeErro(error, "Não foi possível carregar o organizador."));
+      }
     };
+
+    buscarDados();
   }, [codigo]);
 
   if (erro) {

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import StoreProvider from "./redux/StoreProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,15 +18,11 @@ export const metadata: Metadata = {
   description: "Plataforma inteligente para organização e credenciamento de eventos",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="pt-br" className="h-full">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased h-full bg-[#150606] text-[#F5EDEC]`}>
-        {children}
+        <StoreProvider>{children}</StoreProvider>
       </body>
     </html>
   );

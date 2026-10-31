@@ -1,89 +1,86 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { api, mensagemDeErro } from "@/app/services/api";
-import { getOrganizadorLogado } from "@/app/services/auth";
-import { Inscricao, AtualizarStatusInscricaoRequest } from "@/app/types/inscricao";
-import SeletorEvento from "@/app/components/SeletorEvento";
-import ResumoEvento from "@/app/components/ResumoEvento";
-import StatusBadge from "@/app/components/StatusBadge";
 import AvisoErro from "@/app/components/AvisoErro";
-import { useEventoDoOrganizador } from "@/app/hooks/useEventoDoOrganizador";
+import ResumoEvento from "@/app/components/ResumoEvento";
+import SeletorEvento from "@/app/components/SeletorEvento";
+import StatusBadge from "@/app/components/StatusBadge";
+import { RootState } from "@/app/redux/store";
+import { mensagemDeErro } from "@/app/services/api";
+import { consultaEventoDoOrganizador } from "@/app/services/eventoService";
+import { atualizarStatusInscricao, buscarListaInscricoes, cancelarInscricao } from "@/app/services/inscricaoService";
+import { Evento } from "@/app/types/evento";
+import { Inscricao } from "@/app/types/inscricao";
 import { formatarDataHora } from "@/app/utils/formatacao";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
-interface ListaCarregada {
-  eventoId: number;
-  inscricoes: Inscricao[];
-  erro: string | null;
-}
+function ListaInscricoes({ eventoId }: { eventoId: number | null }) {
+  const router = useRouter();
+  const organizadorId = useSelector((state: RootState) => state.auth.usuario?.id ?? null);
 
-function InscricoesConteudo() {
-  const searchParams = useSearchParams();
-  const queryEventoId = searchParams.get("eventoId");
-  const eventoId = queryEventoId ? Number(queryEventoId) : null;
-
-  const { evento, erro: erroEvento, carregando: validandoPosse } = useEventoDoOrganizador(
-    eventoId,
-    "gerenciar inscrições"
-  );
-
-  const [lista, setLista] = useState<ListaCarregada | null>(null);
+  const [evento, setEvento] = useState<Evento | null>(null);
+  const [inscricoes, setInscricoes] = useState<Inscricao[]>([]);
+  const [validandoEvento, setValidandoEvento] = useState(Boolean(eventoId));
+  const [carregandoLista, setCarregandoLista] = useState(true);
+  const [erroEvento, setErroEvento] = useState<string | null>(null);
+  const [erroLista, setErroLista] = useState<string | null>(null);
   const [processandoId, setProcessandoId] = useState<number | null>(null);
 
-  const eventoConfirmadoId = evento?.id ?? null;
-
   useEffect(() => {
-    const organizadorLogado = getOrganizadorLogado();
-    if (!eventoConfirmadoId || !organizadorLogado) return;
+    if (!eventoId) return;
+
     let ativo = true;
-    api
-      .get<Inscricao[]>(`/eventos/${eventoConfirmadoId}/inscricoes?organizadorId=${organizadorLogado.id}`)
-      .then((resposta) => {
-        if (ativo) setLista({ eventoId: eventoConfirmadoId, inscricoes: resposta.data, erro: null });
-      })
-      .catch((error) => {
-        if (ativo) {
-          setLista({
-            eventoId: eventoConfirmadoId,
-            inscricoes: [],
-            erro: mensagemDeErro(error, "Não foi possível carregar as inscrições."),
-          });
+
+    const carregarInscricoes = async () => {
+      try {
+        const dados = await buscarListaInscricoes(eventoId);
+        setInscricoes(dados);
+      } catch (error) {
+        setErroLista(mensagemDeErro(error, "Não foi possível carregar as inscrições."));
+      } finally {
+        setCarregandoLista(false);
+      }
+    };
+
+    // Só busca a lista depois que a posse do evento foi confirmada
+    const carregarDados = async () => {
+      try {
+        const valorEventoBack = await consultaEventoDoOrganizador(eventoId, organizadorId);
+        if (!ativo) return;
+        if (!valorEventoBack) {
+          alert("Você só pode gerenciar inscrições em eventos organizados por você.");
+          router.push("/eventos");
+          return;
         }
-      });
+        setEvento(valorEventoBack);
+        setValidandoEvento(false);
+        carregarInscricoes();
+      } catch (error) {
+        setErroEvento(mensagemDeErro(error, "Não foi possível carregar o evento."));
+        setValidandoEvento(false);
+      }
+    };
+
+    carregarDados();
+
     return () => {
       ativo = false;
     };
-  }, [eventoConfirmadoId]);
-
-  const listaAtual = lista && lista.eventoId === eventoConfirmadoId ? lista : null;
-  const inscricoes = listaAtual?.inscricoes ?? [];
+  }, [eventoId, organizadorId, router]);
 
   // A API devolve a inscrição atualizada; troca só a linha alterada
   const substituirInscricao = (atualizada: Inscricao) => {
-    setLista((anterior) =>
-      anterior
-        ? {
-            ...anterior,
-            inscricoes: anterior.inscricoes.map((item) => (item.id === atualizada.id ? atualizada : item)),
-          }
-        : anterior
-    );
+    setInscricoes((anteriores) => anteriores.map((item) => (item.id === atualizada.id ? atualizada : item)));
   };
 
-  const handleConfirmar = async (inscricao: Inscricao) => {
-    const organizadorLogado = getOrganizadorLogado();
-    if (!eventoId || !organizadorLogado) return;
+  const handleConfirmarInscricao = async (inscricao: Inscricao) => {
+    if (!eventoId) return;
 
     setProcessandoId(inscricao.id);
     try {
-      const payload: AtualizarStatusInscricaoRequest = { status: "CONFIRMADA" };
-      const resposta = await api.patch<Inscricao>(
-        `/eventos/${eventoId}/inscricoes/${inscricao.id}/status?organizadorId=${organizadorLogado.id}`,
-        payload
-      );
-      substituirInscricao(resposta.data);
+      substituirInscricao(await atualizarStatusInscricao(eventoId, inscricao.id || 0, "CONFIRMADA"));
     } catch (error) {
       alert(mensagemDeErro(error, "Não foi possível confirmar a inscrição."));
     } finally {
@@ -91,9 +88,8 @@ function InscricoesConteudo() {
     }
   };
 
-  const handleCancelar = async (inscricao: Inscricao) => {
-    const organizadorLogado = getOrganizadorLogado();
-    if (!eventoId || !organizadorLogado) return;
+  const handleCancelarInscricao = async (inscricao: Inscricao) => {
+    if (!eventoId) return;
 
     const confirmou = confirm(
       `Cancelar a inscrição de "${inscricao.nomeParticipante}"?\n\nA credencial deixa de valer para a entrada no evento.`
@@ -102,9 +98,7 @@ function InscricoesConteudo() {
 
     setProcessandoId(inscricao.id);
     try {
-      await api.delete(
-        `/eventos/${eventoId}/inscricoes/${inscricao.id}/excluir?organizadorId=${organizadorLogado.id}`
-      );
+      await cancelarInscricao(eventoId, inscricao.id || 0);
       substituirInscricao({ ...inscricao, status: "CANCELADA" });
     } catch (error) {
       alert(mensagemDeErro(error, "Não foi possível cancelar a inscrição."));
@@ -141,7 +135,7 @@ function InscricoesConteudo() {
 
       <SeletorEvento eventoIdSelecionado={eventoId} rotaBase="/inscricoes" label="Evento selecionado" />
 
-      {validandoPosse ? (
+      {validandoEvento ? (
         <div className="bg-[#1D0B0B] border border-white/10 p-12 rounded-3xl text-center shadow-xl">
           <div className="inline-block animate-spin w-6 h-6 border-2 border-[#FF3B3B] border-t-transparent rounded-full mb-3" />
           <p className="text-white/50 text-sm">Validando o evento selecionado...</p>
@@ -155,7 +149,7 @@ function InscricoesConteudo() {
             atalho={{ href: `/palestrantes?eventoId=${evento.id}`, rotulo: "Ver palestrantes", icone: "🎙️" }}
           />
 
-          <AvisoErro mensagem={listaAtual?.erro ?? null} />
+          <AvisoErro mensagem={erroLista} />
 
           {/* Tabela de Inscrições */}
           <div className="md:overflow-x-auto -mx-5 sm:-mx-6 md:mx-0">
@@ -171,7 +165,7 @@ function InscricoesConteudo() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 text-white/80">
-                {!listaAtual ? (
+                {carregandoLista ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center text-white/40 text-sm">
                       <div className="inline-block animate-spin w-6 h-6 border-2 border-[#FF3B3B] border-t-transparent rounded-full mb-3" />
@@ -217,7 +211,7 @@ function InscricoesConteudo() {
                               <button
                                 type="button"
                                 disabled={isProcessando}
-                                onClick={() => handleConfirmar(inscricao)}
+                                onClick={() => handleConfirmarInscricao(inscricao)}
                                 className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
                               >
                                 {isProcessando ? "Confirmando..." : "Confirmar"}
@@ -228,7 +222,7 @@ function InscricoesConteudo() {
                               <button
                                 type="button"
                                 disabled={isProcessando}
-                                onClick={() => handleCancelar(inscricao)}
+                                onClick={() => handleCancelarInscricao(inscricao)}
                                 className="text-xs font-medium text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50"
                               >
                                 Cancelar
@@ -279,7 +273,16 @@ function InscricoesConteudo() {
   );
 }
 
-export default function InscricoesPage() {
+function InscricoesConteudo() {
+  const searchParams = useSearchParams();
+  const queryEventoId = searchParams.get("eventoId");
+  const eventoId = queryEventoId ? Number(queryEventoId) : null;
+
+  // A key recria a tela ao trocar de evento, descartando os dados do evento anterior
+  return <ListaInscricoes key={eventoId ?? "sem-evento"} eventoId={eventoId} />;
+}
+
+export default function Inscricoes() {
   return (
     <Suspense
       fallback={

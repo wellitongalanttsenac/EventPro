@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { api, mensagemDeErro } from "@/app/services/api";
-import { InscricaoFormProps, CriarInscricaoRequest } from "@/app/types/inscricao";
-import SeletorEvento from "@/app/components/SeletorEvento";
 import AvisoErro from "@/app/components/AvisoErro";
+import BotaoEnviar from "@/app/components/BotaoEnviar";
+import SeletorEvento from "@/app/components/SeletorEvento";
+import { mensagemDeErro } from "@/app/services/api";
+import { salvarInscricao } from "@/app/services/inscricaoService";
+import { Inscricao, InscricaoFormProps } from "@/app/types/inscricao";
 import {
   CLASSE_BOTAO_PRIMARIO,
   CLASSE_BOTAO_SECUNDARIO,
@@ -14,19 +13,51 @@ import {
   CLASSE_LABEL,
   CLASSE_RODAPE_FORM,
 } from "@/app/utils/estilos";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function InscricaoForm({ eventoIdPredefinido }: InscricaoFormProps) {
   const router = useRouter();
 
-  const [eventoId, setEventoId] = useState<number | null>(eventoIdPredefinido ?? null);
-  const [nomeParticipante, setNomeParticipante] = useState("");
-  const [emailParticipante, setEmailParticipante] = useState("");
-
+  const [inscricao, setInscricao] = useState<Inscricao>(
+    new Inscricao(null, "", "", null, "PENDENTE", null, eventoIdPredefinido ?? null)
+  );
   const [erroApi, setErroApi] = useState<string | null>(null);
-  const [salvando, setSalvando] = useState(false);
 
-  const handleSalvar = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const eventoId = inscricao.eventoId;
+
+  const handlerChange = (campo: "nomeParticipante" | "emailParticipante", valor: string) => {
+    setInscricao(
+      (valorAnterior) =>
+        new Inscricao(
+          valorAnterior.id,
+          campo === "nomeParticipante" ? valor : valorAnterior.nomeParticipante,
+          campo === "emailParticipante" ? valor : valorAnterior.emailParticipante,
+          valorAnterior.dataInscricao,
+          valorAnterior.status,
+          valorAnterior.credencial,
+          valorAnterior.eventoId
+        )
+    );
+  };
+
+  const handlerChangeEvento = (id: number) => {
+    setInscricao(
+      (valorAnterior) =>
+        new Inscricao(
+          valorAnterior.id,
+          valorAnterior.nomeParticipante,
+          valorAnterior.emailParticipante,
+          valorAnterior.dataInscricao,
+          valorAnterior.status,
+          valorAnterior.credencial,
+          id
+        )
+    );
+  };
+
+  const handlerSalvar = async () => {
     setErroApi(null);
 
     if (!eventoId) {
@@ -34,32 +65,34 @@ export default function InscricaoForm({ eventoIdPredefinido }: InscricaoFormProp
       return;
     }
 
-    setSalvando(true);
-    const payload: CriarInscricaoRequest = {
-      nomeParticipante: nomeParticipante.trim(),
-      emailParticipante: emailParticipante.trim().toLowerCase(),
-    };
+    const inscricaoSalvar = new Inscricao(
+      inscricao.id,
+      inscricao.nomeParticipante.trim(),
+      inscricao.emailParticipante.trim().toLowerCase(),
+      inscricao.dataInscricao,
+      inscricao.status,
+      inscricao.credencial,
+      eventoId
+    );
 
     try {
-      await api.post(`/eventos/${eventoId}/inscricoes`, payload);
+      await salvarInscricao(eventoId, inscricaoSalvar);
       alert("Inscrição registrada! Ela fica pendente até você confirmar e gerar a credencial.");
       router.push(`/inscricoes?eventoId=${eventoId}`);
     } catch (error) {
       setErroApi(mensagemDeErro(error, "Não foi possível registrar a inscrição."));
-    } finally {
-      setSalvando(false);
     }
   };
 
   const voltarUrl = eventoId ? `/inscricoes?eventoId=${eventoId}` : "/inscricoes";
 
   return (
-    <form onSubmit={handleSalvar} className="space-y-6">
+    <form action={handlerSalvar} className="space-y-6">
       <AvisoErro mensagem={erroApi} />
 
       <SeletorEvento
         eventoIdSelecionado={eventoId}
-        onEventoChange={(id) => setEventoId(id)}
+        onEventoChange={(id) => handlerChangeEvento(id)}
         label="Evento *"
       />
 
@@ -70,11 +103,12 @@ export default function InscricaoForm({ eventoIdPredefinido }: InscricaoFormProp
           </label>
           <input
             id="inscricao-nome"
+            name="nomeParticipante"
             type="text"
             required
             maxLength={255}
-            value={nomeParticipante}
-            onChange={(e) => setNomeParticipante(e.target.value)}
+            value={inscricao.nomeParticipante}
+            onChange={(e) => handlerChange("nomeParticipante", e.target.value)}
             placeholder="Ex: Lucas Henrique Oliveira"
             className={CLASSE_CAMPO}
           />
@@ -86,11 +120,12 @@ export default function InscricaoForm({ eventoIdPredefinido }: InscricaoFormProp
           </label>
           <input
             id="inscricao-email"
+            name="emailParticipante"
             type="email"
             required
             maxLength={255}
-            value={emailParticipante}
-            onChange={(e) => setEmailParticipante(e.target.value)}
+            value={inscricao.emailParticipante}
+            onChange={(e) => handlerChange("emailParticipante", e.target.value)}
             placeholder="participante@email.com"
             className={CLASSE_CAMPO}
           />
@@ -109,9 +144,12 @@ export default function InscricaoForm({ eventoIdPredefinido }: InscricaoFormProp
         <Link href={voltarUrl} className={CLASSE_BOTAO_SECUNDARIO}>
           Cancelar
         </Link>
-        <button type="submit" disabled={salvando || !eventoId} className={CLASSE_BOTAO_PRIMARIO}>
-          {salvando ? "Registrando..." : "Registrar inscrição"}
-        </button>
+        <BotaoEnviar
+          texto="Registrar inscrição"
+          textoEnviando="Registrando..."
+          desabilitado={!eventoId}
+          className={CLASSE_BOTAO_PRIMARIO}
+        />
       </div>
     </form>
   );

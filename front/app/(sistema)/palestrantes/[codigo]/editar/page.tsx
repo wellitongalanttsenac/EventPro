@@ -1,48 +1,58 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { api, mensagemDeErro } from "@/app/services/api";
+import { RootState } from "@/app/redux/store";
+import { mensagemDeErro } from "@/app/services/api";
+import { consultaEventoDoOrganizador } from "@/app/services/eventoService";
+import { consultaPalestrantePorId } from "@/app/services/palestranteService";
 import { Palestrante } from "@/app/types/palestrante";
-import PalestranteForm from "@/app/(sistema)/palestrantes/components/PalestranteForm";
-import { useEventoDoOrganizador } from "@/app/hooks/useEventoDoOrganizador";
+import Link from "next/link";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import PalestranteForm from "../../components/PalestranteForm";
 
 function EditarPalestranteConteudo() {
-  const params = useParams();
+  const parametro = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
-  const codigo = Number(params.codigo);
+  const codigo = Number(parametro.codigo);
   const queryEventoId = searchParams.get("eventoId");
   const eventoId = queryEventoId ? Number(queryEventoId) : null;
-
-  const { evento, erro: erroEvento } = useEventoDoOrganizador(eventoId, "editar palestrantes");
+  const organizadorId = useSelector((state: RootState) => state.auth.usuario?.id ?? null);
 
   const [palestrante, setPalestrante] = useState<Palestrante | null>(null);
-  const [erroPalestrante, setErroPalestrante] = useState<string | null>(null);
-
-  const eventoConfirmadoId = evento?.id ?? null;
+  const [erroDados, setErroDados] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!eventoConfirmadoId) return;
+    if (!eventoId) return;
+
     let ativo = true;
-    api
-      .get<Palestrante>(`/eventos/${eventoConfirmadoId}/palestrantes/${codigo}`)
-      .then((resposta) => {
-        if (ativo) setPalestrante(resposta.data);
-      })
-      .catch((error) => {
-        if (ativo) setErroPalestrante(mensagemDeErro(error, "Não foi possível carregar o palestrante."));
-      });
+
+    const buscarDados = async () => {
+      try {
+        const valorEventoBack = await consultaEventoDoOrganizador(eventoId, organizadorId);
+        if (!ativo) return;
+        if (!valorEventoBack) {
+          alert("Você só pode editar palestrantes em eventos organizados por você.");
+          router.push("/eventos");
+          return;
+        }
+        setPalestrante(await consultaPalestrantePorId(eventoId, codigo));
+      } catch (error) {
+        setErroDados(mensagemDeErro(error, "Não foi possível carregar o palestrante."));
+      }
+    };
+
+    buscarDados();
+
     return () => {
       ativo = false;
     };
-  }, [eventoConfirmadoId, codigo]);
+  }, [eventoId, codigo, organizadorId, router]);
 
   const voltarUrl = eventoId ? `/palestrantes?eventoId=${eventoId}` : "/palestrantes";
-  const erro = !eventoId
-    ? "Abra a edição a partir da lista de palestrantes de um evento."
-    : erroEvento || erroPalestrante;
+  const erro = !eventoId ? "Abra a edição a partir da lista de palestrantes de um evento." : erroDados;
 
   if (erro) {
     return (
@@ -94,7 +104,7 @@ function EditarPalestranteConteudo() {
   );
 }
 
-export default function EditarPalestrantePage() {
+export default function EditarPalestrante() {
   return (
     <Suspense
       fallback={

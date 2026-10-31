@@ -1,7 +1,7 @@
 import Link from "next/link";
 import EventoForm from "../components/EventoForm";
 
-export default function NovoEventoPage() {
+export default function CadastroEvento() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Cabeçalho da página */}

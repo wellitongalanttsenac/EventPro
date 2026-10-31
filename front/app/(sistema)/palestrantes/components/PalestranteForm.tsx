@@ -1,14 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { api, mensagemDeErro } from "@/app/services/api";
-import { getOrganizadorLogado } from "@/app/services/auth";
-import { PalestranteFormProps, PalestranteRequest } from "@/app/types/palestrante";
-import SeletorEvento from "@/app/components/SeletorEvento";
 import AvisoErro from "@/app/components/AvisoErro";
-import { cpfValido, mascararCpf } from "@/app/utils/formatacao";
+import BotaoEnviar from "@/app/components/BotaoEnviar";
+import SeletorEvento from "@/app/components/SeletorEvento";
+import { mensagemDeErro } from "@/app/services/api";
+import { atualizarPalestrante, salvarPalestrante } from "@/app/services/palestranteService";
+import { Palestrante, PalestranteFormProps } from "@/app/types/palestrante";
 import {
   CLASSE_BOTAO_PRIMARIO,
   CLASSE_BOTAO_SECUNDARIO,
@@ -17,26 +14,51 @@ import {
   CLASSE_LABEL,
   CLASSE_RODAPE_FORM,
 } from "@/app/utils/estilos";
+import { cpfValido, mascararCpf } from "@/app/utils/formatacao";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
-export default function PalestranteForm({
-  palestranteExistente,
-  eventoIdPredefinido,
-}: PalestranteFormProps) {
+export default function PalestranteForm({ palestranteExistente, eventoIdPredefinido }: PalestranteFormProps) {
   const router = useRouter();
 
-  const [nome, setNome] = useState(palestranteExistente?.nome ?? "");
-  const [cpf, setCpf] = useState(mascararCpf(palestranteExistente?.cpf ?? ""));
-  const [email, setEmail] = useState(palestranteExistente?.email ?? "");
-  const [eventoId, setEventoId] = useState<number | null>(
-    eventoIdPredefinido ?? palestranteExistente?.eventoId ?? null
+  const [palestrante, setPalestrante] = useState<Palestrante>(
+    palestranteExistente
+      ? new Palestrante(
+          palestranteExistente.id,
+          palestranteExistente.nome,
+          mascararCpf(palestranteExistente.cpf),
+          palestranteExistente.email,
+          eventoIdPredefinido ?? palestranteExistente.eventoId
+        )
+      : new Palestrante(null, "", "", "", eventoIdPredefinido ?? null)
   );
-
   const [erroCpf, setErroCpf] = useState<string | null>(null);
   const [erroApi, setErroApi] = useState<string | null>(null);
-  const [salvando, setSalvando] = useState(false);
 
-  const handleSalvar = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const eventoId = palestrante.eventoId;
+
+  const handlerChange = (campo: "nome" | "cpf" | "email", valor: string) => {
+    setPalestrante(
+      (valorAnterior) =>
+        new Palestrante(
+          valorAnterior.id,
+          campo === "nome" ? valor : valorAnterior.nome,
+          campo === "cpf" ? mascararCpf(valor) : valorAnterior.cpf,
+          campo === "email" ? valor : valorAnterior.email,
+          valorAnterior.eventoId
+        )
+    );
+  };
+
+  const handlerChangeEvento = (id: number) => {
+    setPalestrante(
+      (valorAnterior) =>
+        new Palestrante(valorAnterior.id, valorAnterior.nome, valorAnterior.cpf, valorAnterior.email, id)
+    );
+  };
+
+  const handlerSalvar = async () => {
     setErroApi(null);
 
     if (!eventoId) {
@@ -44,57 +66,44 @@ export default function PalestranteForm({
       return;
     }
 
-    if (!cpfValido(cpf)) {
+    if (!cpfValido(palestrante.cpf)) {
       setErroCpf("CPF inválido. Confira os 11 dígitos.");
       return;
     }
     setErroCpf(null);
 
-    const organizadorLogado = getOrganizadorLogado();
-    if (!organizadorLogado) {
-      router.push("/login");
-      return;
-    }
-
-    setSalvando(true);
-    const payload: PalestranteRequest = {
-      nome: nome.trim(),
-      cpf,
-      email: email.trim().toLowerCase(),
-    };
+    const palestranteSalvar = new Palestrante(
+      palestrante.id,
+      palestrante.nome.trim(),
+      palestrante.cpf,
+      palestrante.email.trim().toLowerCase(),
+      eventoId
+    );
 
     try {
       if (palestranteExistente) {
-        await api.put(
-          `/eventos/${eventoId}/palestrantes/${palestranteExistente.id}?organizadorId=${organizadorLogado.id}`,
-          payload
-        );
+        await atualizarPalestrante(eventoId, palestranteSalvar);
         alert("Palestrante atualizado com sucesso!");
       } else {
-        await api.post(
-          `/eventos/${eventoId}/palestrantes?organizadorId=${organizadorLogado.id}`,
-          payload
-        );
+        await salvarPalestrante(eventoId, palestranteSalvar);
         alert("Palestrante cadastrado com sucesso!");
       }
       router.push(`/palestrantes?eventoId=${eventoId}`);
     } catch (error) {
       setErroApi(mensagemDeErro(error, "Não foi possível salvar o palestrante."));
-    } finally {
-      setSalvando(false);
     }
   };
 
   const voltarUrl = eventoId ? `/palestrantes?eventoId=${eventoId}` : "/palestrantes";
 
   return (
-    <form onSubmit={handleSalvar} className="space-y-6">
+    <form action={handlerSalvar} className="space-y-6">
       <AvisoErro mensagem={erroApi} />
 
       <div className="space-y-2">
         <SeletorEvento
           eventoIdSelecionado={eventoId}
-          onEventoChange={(id) => setEventoId(id)}
+          onEventoChange={(id) => handlerChangeEvento(id)}
           desabilitado={Boolean(palestranteExistente)}
           label="Evento vinculado *"
         />
@@ -112,11 +121,12 @@ export default function PalestranteForm({
           </label>
           <input
             id="palestrante-nome"
+            name="nome"
             type="text"
             required
             maxLength={255}
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
+            value={palestrante.nome}
+            onChange={(e) => handlerChange("nome", e.target.value)}
             placeholder="Ex: Dra. Mariana Costa"
             className={CLASSE_CAMPO}
           />
@@ -128,12 +138,13 @@ export default function PalestranteForm({
           </label>
           <input
             id="palestrante-cpf"
+            name="cpf"
             type="text"
             inputMode="numeric"
             required
-            value={cpf}
+            value={palestrante.cpf}
             onChange={(e) => {
-              setCpf(mascararCpf(e.target.value));
+              handlerChange("cpf", e.target.value);
               setErroCpf(null);
             }}
             placeholder="000.000.000-00"
@@ -154,11 +165,12 @@ export default function PalestranteForm({
           </label>
           <input
             id="palestrante-email"
+            name="email"
             type="email"
             required
             maxLength={255}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={palestrante.email}
+            onChange={(e) => handlerChange("email", e.target.value)}
             placeholder="palestrante@evento.com"
             className={CLASSE_CAMPO}
           />
@@ -169,9 +181,12 @@ export default function PalestranteForm({
         <Link href={voltarUrl} className={CLASSE_BOTAO_SECUNDARIO}>
           Cancelar
         </Link>
-        <button type="submit" disabled={salvando || !eventoId} className={CLASSE_BOTAO_PRIMARIO}>
-          {salvando ? "Salvando..." : palestranteExistente ? "Salvar alterações" : "Cadastrar palestrante"}
-        </button>
+        <BotaoEnviar
+          texto={palestranteExistente ? "Salvar alterações" : "Cadastrar palestrante"}
+          textoEnviando="Salvando..."
+          desabilitado={!eventoId}
+          className={CLASSE_BOTAO_PRIMARIO}
+        />
       </div>
     </form>
   );

@@ -1,49 +1,63 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { api, mensagemDeErro } from "@/app/services/api";
-import { getOrganizadorLogado } from "@/app/services/auth";
-import { Inscricao, AtualizarStatusInscricaoRequest } from "@/app/types/inscricao";
-import StatusBadge from "@/app/components/StatusBadge";
 import AvisoErro from "@/app/components/AvisoErro";
-import { useEventoDoOrganizador } from "@/app/hooks/useEventoDoOrganizador";
+import StatusBadge from "@/app/components/StatusBadge";
+import { RootState } from "@/app/redux/store";
+import { mensagemDeErro } from "@/app/services/api";
+import { consultaEventoDoOrganizador } from "@/app/services/eventoService";
+import { atualizarStatusInscricao, consultaInscricaoPorId } from "@/app/services/inscricaoService";
+import { Evento } from "@/app/types/evento";
+import { Inscricao } from "@/app/types/inscricao";
 import { formatarDataHora } from "@/app/utils/formatacao";
+import Link from "next/link";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
 function DetalheInscricaoConteudo() {
-  const params = useParams();
+  const parametro = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
-  const codigo = Number(params.codigo);
+  const codigo = Number(parametro.codigo);
   const queryEventoId = searchParams.get("eventoId");
   const eventoId = queryEventoId ? Number(queryEventoId) : null;
+  const organizadorId = useSelector((state: RootState) => state.auth.usuario?.id ?? null);
 
-  const { evento, erro: erroEvento } = useEventoDoOrganizador(eventoId, "ver inscrições");
-
+  const [evento, setEvento] = useState<Evento | null>(null);
   const [inscricao, setInscricao] = useState<Inscricao | null>(null);
-  const [erroInscricao, setErroInscricao] = useState<string | null>(null);
+  const [erroDados, setErroDados] = useState<string | null>(null);
   const [erroAcao, setErroAcao] = useState<string | null>(null);
   const [copiado, setCopiado] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
 
-  const eventoConfirmadoId = evento?.id ?? null;
-
   useEffect(() => {
-    if (!eventoConfirmadoId) return;
+    if (!eventoId) return;
+
     let ativo = true;
-    api
-      .get<Inscricao>(`/eventos/${eventoConfirmadoId}/inscricoes/${codigo}`)
-      .then((resposta) => {
-        if (ativo) setInscricao(resposta.data);
-      })
-      .catch((error) => {
-        if (ativo) setErroInscricao(mensagemDeErro(error, "Não foi possível carregar a inscrição."));
-      });
+
+    const buscarDados = async () => {
+      try {
+        const valorEventoBack = await consultaEventoDoOrganizador(eventoId, organizadorId);
+        if (!ativo) return;
+        if (!valorEventoBack) {
+          alert("Você só pode ver inscrições em eventos organizados por você.");
+          router.push("/eventos");
+          return;
+        }
+        setEvento(valorEventoBack);
+        setInscricao(await consultaInscricaoPorId(eventoId, codigo));
+      } catch (error) {
+        setErroDados(mensagemDeErro(error, "Não foi possível carregar a inscrição."));
+      }
+    };
+
+    buscarDados();
+
     return () => {
       ativo = false;
     };
-  }, [eventoConfirmadoId, codigo]);
+  }, [eventoId, codigo, organizadorId, router]);
 
   const handleCopiarCredencial = async () => {
     if (!inscricao?.credencial) return;
@@ -58,18 +72,12 @@ function DetalheInscricaoConteudo() {
   };
 
   const handleConfirmarInscricao = async () => {
-    const organizadorLogado = getOrganizadorLogado();
-    if (!eventoId || !inscricao || !organizadorLogado) return;
+    if (!eventoId || !inscricao) return;
 
     setErroAcao(null);
     setConfirmando(true);
     try {
-      const payload: AtualizarStatusInscricaoRequest = { status: "CONFIRMADA" };
-      const resposta = await api.patch<Inscricao>(
-        `/eventos/${eventoId}/inscricoes/${inscricao.id}/status?organizadorId=${organizadorLogado.id}`,
-        payload
-      );
-      setInscricao(resposta.data);
+      setInscricao(await atualizarStatusInscricao(eventoId, inscricao.id || 0, "CONFIRMADA"));
     } catch (error) {
       setErroAcao(mensagemDeErro(error, "Não foi possível confirmar a inscrição."));
     } finally {
@@ -78,9 +86,7 @@ function DetalheInscricaoConteudo() {
   };
 
   const voltarUrl = eventoId ? `/inscricoes?eventoId=${eventoId}` : "/inscricoes";
-  const erro = !eventoId
-    ? "Abra a inscrição a partir da lista de inscrições de um evento."
-    : erroEvento || erroInscricao;
+  const erro = !eventoId ? "Abra a inscrição a partir da lista de inscrições de um evento." : erroDados;
 
   if (erro) {
     return (
@@ -248,7 +254,7 @@ function DetalheInscricaoConteudo() {
   );
 }
 
-export default function DetalheInscricaoPage() {
+export default function DetalheInscricao() {
   return (
     <Suspense
       fallback={

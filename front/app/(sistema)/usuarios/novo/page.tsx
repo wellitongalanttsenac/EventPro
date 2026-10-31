@@ -1,7 +1,7 @@
 import Link from "next/link";
 import UsuarioForm from "../components/UsuarioForm";
 
-export default function NovoUsuarioPage() {
+export default function CadastroUsuario() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Cabeçalho da página */}

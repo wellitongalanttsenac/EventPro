@@ -3,8 +3,10 @@
 import { useEffect, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { api, mensagemDeErro } from "@/app/services/api";
-import { getOrganizadorLogado } from "@/app/services/auth";
+import { useSelector } from "react-redux";
+import { RootState } from "@/app/redux/store";
+import { mensagemDeErro } from "@/app/services/api";
+import { buscarEventosDoOrganizador } from "@/app/services/eventoService";
 import { Evento } from "@/app/types/evento";
 import StatusBadge, { rotuloStatus } from "./StatusBadge";
 
@@ -27,34 +29,24 @@ export default function SeletorEvento({
 }: SeletorEventoProps) {
   const router = useRouter();
   const idCampo = useId();
+  const organizadorId = useSelector((state: RootState) => state.auth.usuario?.id ?? null);
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
-    let ativo = true;
-
     const carregarEventos = async () => {
       try {
-        const resposta = await api.get<Evento[]>("/eventos");
-        const organizadorLogado = getOrganizadorLogado();
-        // Regra de negócio: apenas os eventos pertencentes ao organizador logado
-        const meusEventos = resposta.data.filter(
-          (ev) => ev.organizador?.id === organizadorLogado?.id
-        );
-        if (ativo) setEventos(meusEventos);
+        setEventos(await buscarEventosDoOrganizador(organizadorId));
       } catch (error) {
-        if (ativo) setErro(mensagemDeErro(error, "Não foi possível carregar seus eventos."));
+        setErro(mensagemDeErro(error, "Não foi possível carregar seus eventos."));
       } finally {
-        if (ativo) setCarregando(false);
+        setCarregando(false);
       }
     };
 
     carregarEventos();
-    return () => {
-      ativo = false;
-    };
-  }, []);
+  }, [organizadorId]);
 
   const handleSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const id = Number(e.target.value);
@@ -151,7 +143,7 @@ export default function SeletorEvento({
             Selecione um evento para gerenciar
           </option>
           {eventos.map((ev) => (
-            <option key={ev.id} value={ev.id} className="bg-[#150606] text-white">
+            <option key={ev.id} value={ev.id ?? ""} className="bg-[#150606] text-white">
               {ev.nome} ({rotuloStatus(ev.status)})
             </option>
           ))}

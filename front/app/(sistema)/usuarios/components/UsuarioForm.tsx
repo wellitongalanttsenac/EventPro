@@ -1,15 +1,11 @@
 "use client";
 
-import {
-  AtualizarUsuarioRequest,
-  CriarUsuarioRequest,
-  EnumStatusUsuario,
-  UsuarioFormProps,
-} from "@/app/types/usuario";
-import { api, mensagemDeErro } from "@/app/services/api";
 import AvisoErro from "@/app/components/AvisoErro";
+import BotaoEnviar from "@/app/components/BotaoEnviar";
 import { rotuloStatus } from "@/app/components/StatusBadge";
-import { cpfValido, mascararCpf } from "@/app/utils/formatacao";
+import { mensagemDeErro } from "@/app/services/api";
+import { atualizarUsuario, salvarUsuario } from "@/app/services/usuarioService";
+import { EnumStatusUsuario, Usuario, UsuarioFormProps } from "@/app/types/usuario";
 import {
   CLASSE_BOTAO_PRIMARIO,
   CLASSE_BOTAO_SECUNDARIO,
@@ -18,6 +14,7 @@ import {
   CLASSE_LABEL,
   CLASSE_RODAPE_FORM,
 } from "@/app/utils/estilos";
+import { cpfValido, mascararCpf } from "@/app/utils/formatacao";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -26,60 +23,71 @@ const STATUS_USUARIO: EnumStatusUsuario[] = ["ATIVO", "BLOQUEADO", "EXCLUIDO"];
 
 export default function UsuarioForm({ usuarioExistente }: UsuarioFormProps) {
   const router = useRouter();
-  const editando = Boolean(usuarioExistente);
 
-  const [nome, setNome] = useState(usuarioExistente?.nome ?? "");
-  const [cpf, setCpf] = useState(mascararCpf(usuarioExistente?.cpf ?? ""));
-  const [email, setEmail] = useState(usuarioExistente?.email ?? "");
-  const [senha, setSenha] = useState("");
-  const [status, setStatus] = useState<EnumStatusUsuario>(usuarioExistente?.status ?? "ATIVO");
-
+  const [usuario, setUsuario] = useState<Usuario>(
+    usuarioExistente
+      ? new Usuario(
+          usuarioExistente.id,
+          usuarioExistente.nome,
+          usuarioExistente.email,
+          usuarioExistente.status,
+          mascararCpf(usuarioExistente.cpf),
+          ""
+        )
+      : new Usuario(null, "", "", "ATIVO", "", "")
+  );
   const [erroCpf, setErroCpf] = useState<string | null>(null);
   const [erroApi, setErroApi] = useState<string | null>(null);
-  const [salvando, setSalvando] = useState(false);
 
-  const handleSalvar = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handlerChange = (campo: "nome" | "email" | "status" | "cpf" | "senha", valor: string) => {
+    setUsuario(
+      (valorAnterior) =>
+        new Usuario(
+          valorAnterior.id,
+          campo === "nome" ? valor : valorAnterior.nome,
+          campo === "email" ? valor : valorAnterior.email,
+          campo === "status" ? (valor as EnumStatusUsuario) : valorAnterior.status,
+          campo === "cpf" ? mascararCpf(valor) : valorAnterior.cpf,
+          campo === "senha" ? valor : valorAnterior.senha
+        )
+    );
+  };
+
+  const handlerSalvar = async () => {
     setErroApi(null);
 
-    if (!cpfValido(cpf)) {
+    if (!cpfValido(usuario.cpf)) {
       setErroCpf("CPF inválido. Confira os 11 dígitos.");
       return;
     }
     setErroCpf(null);
-    setSalvando(true);
+
+    const usuarioSalvar = new Usuario(
+      usuario.id,
+      usuario.nome.trim(),
+      usuario.email.trim().toLowerCase(),
+      usuario.status,
+      usuario.cpf,
+      usuario.senha
+    );
 
     try {
       if (usuarioExistente) {
         // PUT /usuarios/{id}: a API não altera a senha por esta rota
-        const payload: AtualizarUsuarioRequest = {
-          nome: nome.trim(),
-          cpf,
-          email: email.trim().toLowerCase(),
-          status,
-        };
-        await api.put(`/usuarios/${usuarioExistente.id}`, payload);
+        await atualizarUsuario(usuarioSalvar);
         alert("Organizador atualizado com sucesso!");
       } else {
-        const payload: CriarUsuarioRequest = {
-          nome: nome.trim(),
-          senha,
-          cpf,
-          email: email.trim().toLowerCase(),
-        };
-        await api.post("/usuarios", payload);
+        await salvarUsuario(usuarioSalvar);
         alert("Organizador cadastrado com sucesso!");
       }
       router.push("/usuarios");
     } catch (error) {
       setErroApi(mensagemDeErro(error, "Não foi possível salvar o organizador."));
-    } finally {
-      setSalvando(false);
     }
   };
 
   return (
-    <form onSubmit={handleSalvar} className="space-y-6">
+    <form action={handlerSalvar} className="space-y-6">
       <AvisoErro mensagem={erroApi} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -94,8 +102,8 @@ export default function UsuarioForm({ usuarioExistente }: UsuarioFormProps) {
             required
             maxLength={255}
             autoComplete="name"
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
+            value={usuario.nome}
+            onChange={(e) => handlerChange("nome", e.target.value)}
             placeholder="Ex: Carlos Eduardo Silva"
             className={CLASSE_CAMPO}
           />
@@ -111,9 +119,9 @@ export default function UsuarioForm({ usuarioExistente }: UsuarioFormProps) {
             type="text"
             inputMode="numeric"
             required
-            value={cpf}
+            value={usuario.cpf}
             onChange={(e) => {
-              setCpf(mascararCpf(e.target.value));
+              handlerChange("cpf", e.target.value);
               setErroCpf(null);
             }}
             placeholder="000.000.000-00"
@@ -138,14 +146,14 @@ export default function UsuarioForm({ usuarioExistente }: UsuarioFormProps) {
             type="email"
             required
             autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={usuario.email}
+            onChange={(e) => handlerChange("email", e.target.value)}
             placeholder="organizador@eventpro.com"
             className={CLASSE_CAMPO}
           />
         </div>
 
-        {editando ? (
+        {usuarioExistente ? (
           <div className="space-y-2">
             <label htmlFor="usuario-status" className={CLASSE_LABEL}>
               Status *
@@ -153,8 +161,8 @@ export default function UsuarioForm({ usuarioExistente }: UsuarioFormProps) {
             <select
               id="usuario-status"
               name="status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value as EnumStatusUsuario)}
+              value={usuario.status}
+              onChange={(e) => handlerChange("status", e.target.value)}
               className={`${CLASSE_CAMPO} cursor-pointer`}
             >
               {STATUS_USUARIO.map((opcao) => (
@@ -175,8 +183,8 @@ export default function UsuarioForm({ usuarioExistente }: UsuarioFormProps) {
               type="password"
               required
               autoComplete="new-password"
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
+              value={usuario.senha}
+              onChange={(e) => handlerChange("senha", e.target.value)}
               placeholder="••••••••"
               className={CLASSE_CAMPO}
             />
@@ -184,7 +192,7 @@ export default function UsuarioForm({ usuarioExistente }: UsuarioFormProps) {
         )}
       </div>
 
-      {editando && (
+      {usuarioExistente && (
         <p className="text-xs text-white/40">
           A senha do organizador não é alterada nesta tela.
         </p>
@@ -194,9 +202,11 @@ export default function UsuarioForm({ usuarioExistente }: UsuarioFormProps) {
         <Link href="/usuarios" className={CLASSE_BOTAO_SECUNDARIO}>
           Cancelar
         </Link>
-        <button type="submit" disabled={salvando} className={CLASSE_BOTAO_PRIMARIO}>
-          {salvando ? "Salvando..." : editando ? "Salvar alterações" : "Cadastrar organizador"}
-        </button>
+        <BotaoEnviar
+          texto={usuarioExistente ? "Salvar alterações" : "Cadastrar organizador"}
+          textoEnviando="Salvando..."
+          className={CLASSE_BOTAO_PRIMARIO}
+        />
       </div>
     </form>
   );
