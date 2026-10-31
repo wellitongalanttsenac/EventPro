@@ -1,29 +1,42 @@
+// Camada DOMAIN: value objects.
 package com.example.eventpro.domain.valueobject;
 
 import jakarta.persistence.Embeddable;
 
-// Value object igual ao da referencia: so existe CPF valido dentro do dominio.
-// Fica na coluna "cpf" da tabela usuario (@Embedded), entao o banco atual continua compativel
+/*
+ * VALUE OBJECT CPF (igual à referência do professor)
+ *
+ * Conceito DDD: value object é um objeto que não tem identidade (não tem id),
+ * vale apenas pelo seu conteúdo e é responsável por se manter válido.
+ * Aqui: é impossível existir um CPF inválido dentro do domínio, porque o construtor recusa.
+ *
+ * Quem usa: Usuario (campo cpf) e UsuarioService (ao atualizar o CPF).
+ *
+ * @Embeddable: o JPA grava o campo "cpf" desta classe dentro da tabela usuario
+ * (não cria tabela própria). Fica na coluna "cpf", então o banco atual continua compatível.
+ */
 @Embeddable
 public class CPF {
 
     private String cpf;
 
-    public CPF(){
+    // Construtor vazio exigido pelo JPA para ler do banco.
+    public CPF() {
         this.cpf = "";
     }
 
-    public CPF(String cpf){
+    // Construtor usado pelo sistema: valida antes de aceitar.
+    public CPF(String cpf) {
 
-        if(!isValidCpf(cpf)){
-            throw new IllegalArgumentException("CPF Invalido!");
+        if (!isValidCpf(cpf)) {
+            throw new IllegalArgumentException("CPF Invalido!"); // Vira 400 no GlobalExceptionHandler.
         }
 
         this.cpf = cpf;
     }
 
-
-
+    // Algoritmo oficial de validação dos dois dígitos verificadores do CPF.
+    // static: não depende de um objeto, pode ser chamado como CPF.isValidCpf("...").
     public static boolean isValidCpf(String cpf) {
         if (cpf == null) {
             return false;
@@ -43,7 +56,7 @@ public class CPF {
         }
 
         try {
-            // Cálculo do 1º dígito verificador
+            // Cálculo do 1º dígito verificador: multiplica os 9 primeiros dígitos por 10, 9, 8... 2
             int soma = 0;
             for (int i = 0; i < 9; i++) {
                 soma += Character.getNumericValue(cpf.charAt(i)) * (10 - i);
@@ -57,7 +70,7 @@ public class CPF {
                 return false;
             }
 
-            // Cálculo do 2º dígito verificador
+            // Cálculo do 2º dígito verificador: multiplica os 10 primeiros dígitos por 11, 10, 9... 2
             soma = 0;
             for (int i = 0; i < 10; i++) {
                 soma += Character.getNumericValue(cpf.charAt(i)) * (11 - i);
@@ -74,13 +87,11 @@ public class CPF {
         }
     }
 
-
-
-
+    // Sempre devolve formatado: 123.456.789-09 (os DTOs de resposta usam este método).
     @Override
-    public String toString(){
-        return cpf.replaceAll("\\D","")
-                .replaceAll("(\\d{3})(\\d{3})(\\d{3})(\\d{2})","$1.$2.$3-$4");
+    public String toString() {
+        return cpf.replaceAll("\\D", "")
+                .replaceAll("(\\d{3})(\\d{3})(\\d{3})(\\d{2})", "$1.$2.$3-$4");
     }
 
 }

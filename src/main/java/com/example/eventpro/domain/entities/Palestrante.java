@@ -1,3 +1,4 @@
+// Camada DOMAIN: entidades do negócio.
 package com.example.eventpro.domain.entities;
 
 import jakarta.persistence.Entity;
@@ -10,6 +11,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/*
+ * ENTIDADE Palestrante: quem vai falar / se apresentar em um evento.
+ * Quem usa: PalestranteService.
+ */
 @Entity
 @Data
 @NoArgsConstructor
@@ -20,7 +25,7 @@ public class Palestrante {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String nome;
-    private String cpf;
+    private String cpf;   // Texto simples (diferente do Usuario, aqui não usamos o value object CPF).
     private String email;
 
     // Todo Palestrante está vinculado a um Evento especifico.

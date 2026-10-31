@@ -31,14 +31,16 @@
     </properties>
     <dependencies>
 
-        <!-- Adicionando dependencia isolada de Criptgrafia utiliando o BCrypt -->
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-crypto</artifactId>
-        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+
+        <!-- Igual a referencia: Spring Security completo (filtros, SecurityContextHolder, UserDetails).
+             Ele ja traz o spring-security-crypto, que e de onde vem o BCryptPasswordEncoder -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
         <dependency>

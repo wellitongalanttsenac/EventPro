@@ -17,8 +17,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.example.eventpro.application.service.AuthService;
-import com.example.eventpro.application.service.UsuarioService;
+import com.example.eventpro.application.services.AuthService;
+import com.example.eventpro.application.services.UsuarioService;
 import com.example.eventpro.domain.exception.ChaveAdminInvalidaException;
 import com.example.eventpro.domain.exception.InvalidCredentialsException;
 import com.example.eventpro.presentation.AuthController;

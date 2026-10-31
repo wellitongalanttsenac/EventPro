@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
-import com.example.eventpro.application.DTOs.usuario.CriarAdminRequest;
-import com.example.eventpro.application.DTOs.usuario.CriarUsuarioRequestDTO;
+import com.example.eventpro.application.dto.usuario.CriarAdminRequest;
+import com.example.eventpro.application.dto.usuario.CriarUsuarioRequestDTO;
 
 class UsuarioTest {
 

@@ -18,8 +18,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import com.example.eventpro.application.service.InscricaoService;
-import com.example.eventpro.application.service.PalestranteService;
+import com.example.eventpro.application.services.InscricaoService;
+import com.example.eventpro.application.services.PalestranteService;
 
 // As rotas seguem exatamente o contrato que o front (Next.js) consome: palestrantes e inscricoes
 // sao sub-recursos de /eventos/{eventoId}
@@ -53,20 +53,20 @@ class RotasEventoTest {
 
     @Test
     void deveAtualizarPalestranteDentroDoEvento() throws Exception {
-        mockMvc.perform(put("/eventos/3/palestrantes/7").param("organizadorId", "1")
+        mockMvc.perform(put("/eventos/3/palestrantes/7")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"nome\":\"Pal\",\"cpf\":\"12345678909\",\"email\":\"pal@eventpro.com\"}"))
                 .andExpect(status().isOk());
 
-        verify(palestranteService).atualizarPalestrante(eq(3L), eq(7L), eq(1L), any());
+        verify(palestranteService).atualizarPalestrante(eq(3L), eq(7L), any());
     }
 
     @Test
     void deveExcluirPalestranteDentroDoEvento() throws Exception {
-        mockMvc.perform(delete("/eventos/3/palestrantes/7/excluir").param("organizadorId", "1"))
+        mockMvc.perform(delete("/eventos/3/palestrantes/7/excluir"))
                 .andExpect(status().isOk());
 
-        verify(palestranteService).excluirPalestrantePorId(3L, 7L, 1L);
+        verify(palestranteService).excluirPalestrantePorId(3L, 7L);
     }
 
     @Test
@@ -89,19 +89,19 @@ class RotasEventoTest {
 
     @Test
     void deveAtualizarStatusDaInscricaoDentroDoEvento() throws Exception {
-        mockMvc.perform(patch("/eventos/3/inscricoes/5/status").param("organizadorId", "1")
+        mockMvc.perform(patch("/eventos/3/inscricoes/5/status")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"status\":\"CONFIRMADA\"}"))
                 .andExpect(status().isOk());
 
-        verify(inscricaoService).atualizarStatusInscricao(eq(3L), eq(5L), eq(1L), any());
+        verify(inscricaoService).atualizarStatusInscricao(eq(3L), eq(5L), any());
     }
 
     @Test
     void deveCancelarInscricaoDentroDoEvento() throws Exception {
-        mockMvc.perform(delete("/eventos/3/inscricoes/5/excluir").param("organizadorId", "1"))
+        mockMvc.perform(delete("/eventos/3/inscricoes/5/excluir"))
                 .andExpect(status().isOk());
 
-        verify(inscricaoService).cancelarInscricaoPorId(3L, 5L, 1L);
+        verify(inscricaoService).cancelarInscricaoPorId(3L, 5L);
     }
 }
