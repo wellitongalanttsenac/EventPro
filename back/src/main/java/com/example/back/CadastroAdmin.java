@@ -5,11 +5,14 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-// Regras do cadastro de admin separadas da tela, assim podem ser testadas sem abrir o JavaFX
+// Regras do cadastro de admin separadas da tela, assim podem ser testadas sem abrir o JavaFX.
+// SRP: o UsuarioController cuida da tela; esta classe cuida de validar, montar o JSON e ler o erro da API.
 public class CadastroAdmin {
 
+    // Expressão regular que acha o valor do campo "mensagem" dentro do JSON de erro da API (ErroResponse).
     private static final Pattern MENSAGEM_API = Pattern.compile("\"mensagem\"\\s*:\\s*\"([^\"]*)\"");
 
+    // Devolve a lista de problemas encontrados (lista vazia = tudo certo).
     public static List<String> validar(String nome, String cpf, String email, String senha) {
 
         List<String> erros = new ArrayList<>();
@@ -20,7 +23,7 @@ public class CadastroAdmin {
 
         if (estaVazio(cpf)) {
             erros.add("Informe o CPF.");
-        } else if (cpf.replaceAll("\\D", "").length() != 11) {
+        } else if (cpf.replaceAll("\\D", "").length() != 11) { // Conta só os dígitos.
             erros.add("O CPF precisa ter 11 dígitos.");
         }
 
@@ -47,8 +50,10 @@ public class CadastroAdmin {
                 + "\"secretKey\":\"" + escapar(secretKey) + "\"}";
     }
 
+    // Traduz a resposta de erro da API em uma frase para o usuário.
     public static String mensagemDeErro(int statusHttp, String corpoResposta) {
 
+        // 403 = ChaveAdminInvalidaException no GlobalExceptionHandler da API.
         if (statusHttp == 403) {
             return "Chave de criação de admin inválida! Confira a secretKey da API.";
         }
@@ -68,6 +73,7 @@ public class CadastroAdmin {
         return valor == null || valor.isBlank();
     }
 
+    // Escapa barra e aspas para o texto digitado não quebrar o JSON.
     private static String escapar(String valor) {
         return valor.replace("\\", "\\\\").replace("\"", "\\\"");
     }

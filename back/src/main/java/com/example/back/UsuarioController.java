@@ -21,8 +21,18 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+/*
+ * Controller da tela de CADASTRO DE ADMIN (cadastro-usuario-view.fxml), igual à referência.
+ *
+ * Fluxo: valida os campos -> monta o JSON -> POST http://localhost:8080/usuarios/admin
+ * -> mostra sucesso ou o erro devolvido pela API.
+ *
+ * Com quem conversa: CadastroAdmin (validação e JSON, sem JavaFX, por isso dá para testar)
+ * e a API Spring (rota pública /usuarios/admin, protegida pela secretKey).
+ */
 public class UsuarioController {
 
+    // Campos da tela, ligados pelo fx:id do FXML.
     @FXML
     private TextField txtNome;
 
@@ -33,19 +43,21 @@ public class UsuarioController {
     private TextField txtEmail;
 
     @FXML
-    private PasswordField txtSenha;
+    private PasswordField txtSenha; // PasswordField esconde o texto digitado.
 
+    // Botão "Salvar".
     @FXML
     public void salvarUsuario(ActionEvent event) throws Exception {
 
         //Validar Dados antes de chamar a API
         List<String> erros = CadastroAdmin.validar(txtNome.getText(), txtCpf.getText(), txtEmail.getText(), txtSenha.getText());
 
-        if(!erros.isEmpty()){
+        if (!erros.isEmpty()) {
             showMessage(Alert.AlertType.WARNING, String.join("\n", erros));
             return;
         }
 
+        // Mesmo JSON do CriarAdminRequest da API. A secretKey é a spring.secretkey do application.properties.
         String jsonRequest = CadastroAdmin.montarJson(txtNome.getText().trim(),
                 txtCpf.getText().trim(),
                 txtEmail.getText().trim(),
@@ -54,23 +66,24 @@ public class UsuarioController {
 
         RespostaApi respostaApi;
         try {
-            respostaApi = executaMetodoAPI("http://localhost:8080/usuarios/admin",jsonRequest,"POST");
+            respostaApi = executaMetodoAPI("http://localhost:8080/usuarios/admin", jsonRequest, "POST");
         } catch (IOException e) {
-            showMessage(Alert.AlertType.ERROR,"Não foi possível conectar à API em localhost:8080. Verifique se o back end está rodando.");
+            // API desligada ou fora do ar.
+            showMessage(Alert.AlertType.ERROR, "Não foi possível conectar à API em localhost:8080. Verifique se o back end está rodando.");
             return;
         }
 
-        if(respostaApi.status() == 200){
-            showMessage(Alert.AlertType.INFORMATION,"Usuario salvo com sucesso!");
+        if (respostaApi.status() == 200) {
+            showMessage(Alert.AlertType.INFORMATION, "Usuario salvo com sucesso!");
             voltar(event);
 
-        }else {
+        } else {
             showMessage(Alert.AlertType.ERROR, CadastroAdmin.mensagemDeErro(respostaApi.status(), respostaApi.corpo()));
         }
 
     }
 
-
+    // Botão "Voltar": volta para o menu.
     @FXML
     public void voltar(ActionEvent event) throws IOException {
         FXMLLoader loader =
@@ -79,40 +92,39 @@ public class UsuarioController {
         Scene scene = new Scene(loader.load());
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         stage.setScene(scene);
-
     }
 
     // Status HTTP e corpo da resposta, o corpo traz a mensagem de erro da API (ErroResponse)
     private record RespostaApi(int status, String corpo) {
     }
 
-    private RespostaApi executaMetodoAPI(String url,String json,String protocoloHttp)
+    // Faz a chamada HTTP com a classe nativa do Java (HttpURLConnection), igual à referência.
+    private RespostaApi executaMetodoAPI(String url, String json, String protocoloHttp)
             throws IOException {
-
 
         URL urlAPI = URI.create(url).toURL();
         HttpURLConnection connection = (HttpURLConnection) urlAPI.openConnection();
-        connection.setRequestMethod(protocoloHttp);
-        connection.setDoOutput(true);
+        connection.setRequestMethod(protocoloHttp); // "POST"
+        connection.setDoOutput(true);               // Vamos enviar um corpo.
 
+        if (!json.isEmpty()) {
+            connection.setRequestProperty("Content-Type", "application/json");
 
-        if(!json.isEmpty()){
-            connection.setRequestProperty("Content-Type","application/json");
-
-            try (OutputStream os = connection.getOutputStream()){
+            // try-with-resources: fecha o stream sozinho no final.
+            try (OutputStream os = connection.getOutputStream()) {
                 os.write(json.getBytes(StandardCharsets.UTF_8));
             }
-
         }
 
-        int status = connection.getResponseCode();
+        int status = connection.getResponseCode(); // Dispara a requisição e lê o status.
 
         // Em erro (4xx/5xx) o corpo vem no errorStream
         InputStream corpo = status >= 400 ? connection.getErrorStream() : connection.getInputStream();
-        if(corpo == null){
+        if (corpo == null) {
             return new RespostaApi(status, "");
         }
 
+        // Lê o corpo da resposta linha a linha.
         try (var br = new BufferedReader(new InputStreamReader(corpo, StandardCharsets.UTF_8))) {
             var sb = new StringBuilder();
             String output;
@@ -121,10 +133,10 @@ public class UsuarioController {
             }
             return new RespostaApi(status, sb.toString());
         }
-
     }
-    private void showMessage(Alert.AlertType type, String msg){
-        Alert alerta =new Alert(type);
+
+    private void showMessage(Alert.AlertType type, String msg) {
+        Alert alerta = new Alert(type);
         alerta.setTitle("Mensagem do Sistema!");
         alerta.setHeaderText(null);
         alerta.setContentText(msg);

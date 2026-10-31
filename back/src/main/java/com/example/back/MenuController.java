@@ -9,9 +9,10 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 
+// Controller da tela de MENU (menu-view.fxml), igual à referência.
 public class MenuController {
 
-
+    // Botão "Cadastro Admin": troca para a tela de cadastro.
     @FXML
     public void abrirCadastro(ActionEvent event) throws IOException {
         FXMLLoader loader =
@@ -20,11 +21,11 @@ public class MenuController {
         Scene scene = new Scene(loader.load());
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         stage.setScene(scene);
-
     }
 
+    // Botão "Sair": encerra o programa.
     @FXML
-    public void sair(){
+    public void sair() {
         System.exit(0);
     }
 
