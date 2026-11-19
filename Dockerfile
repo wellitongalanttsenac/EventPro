@@ -1,4 +1,4 @@
-FROM maven:3.9.8-eclipse-temurin-25-jammy AS builder
+FROM maven:3.9-eclipse-temurin-25 AS builder
 LABEL authors="welliton.caetano"
 
 WORKDIR /app
